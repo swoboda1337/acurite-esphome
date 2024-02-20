@@ -181,7 +181,7 @@ void AcuRite::loop() {
       }
     } else if (len == 8 && valid) {
       int32_t counter = ((data[4] & 0x7F) << 14) | ((data[5] & 0x7F) << 7) | ((data[6] & 0x7F) << 0);
-      float rainfall = (float)counter * 0.01 * 25.4;
+      float rainfall = (float)counter * 0.254
       ESP_LOGD(TAG, "Got rainfall=%.1fmm", rainfall);
       if (rain_sensor_ != nullptr) {
         rain_sensor_->publish_state(rainfall);
