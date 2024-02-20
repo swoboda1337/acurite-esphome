@@ -91,9 +91,9 @@ void IRAM_ATTR AcuRiteStore::gpio_intr(AcuRiteStore *arg) {
           arg->data[idx] &= ~bit;
         }
         arg->bits++;
-        arg->state = (arg->bits == 7 * 8) ? ACURITE_DONE : ACURITE_BIT_OFF;
+        arg->state = (arg->bits >= 8 * 8) ? ACURITE_DONE : ACURITE_BIT_OFF;
       } else {
-        arg->state = ACURITE_INIT;
+        arg->state = (arg->bits >= 7 * 8) ? ACURITE_DONE : ACURITE_INIT;
       }
       break;
     
@@ -102,7 +102,7 @@ void IRAM_ATTR AcuRiteStore::gpio_intr(AcuRiteStore *arg) {
       if (diff < ACURITE_SYNC) {
         arg->state = ACURITE_BIT_ON;
       } else {
-        arg->state = ACURITE_INIT;
+        arg->state = (arg->bits >= 7 * 8) ? ACURITE_DONE : ACURITE_INIT;
       }
       break;
     
@@ -116,57 +116,67 @@ void AcuRite::loop() {
   {
     static const char channel[4] = {'C', 'X', 'B', 'A'};
     bool valid = true;
-    uint8_t data[7];
+    uint8_t data[8];
+    uint8_t len;
     
     // copy data and reset state
-    for (int32_t i = 0; i < 7; i++) {
+    len = store.bits / 8;
+    for (int32_t i = 0; i < len; i++) {
       data[i] = store.data[i];
     }
     store.state = ACURITE_INIT;
 
     // print data
-    ESP_LOGD(TAG, "AcuRite data: %02x %02x %02x %02x %02x %02x %02x", 
-             data[0], data[1], data[2], data[3], data[4], data[5], data[6]);
-    
-    // check parity (bytes 1 to 5)
-    for (int32_t i = 1; i <= 5; i++) {
-      uint8_t parity = (data[i] >> 7) & 1;
-      uint8_t sum = 0;
-      for (int32_t b = 0; b <= 6; b++) {
-        sum ^= (data[i] >> b) & 1;
-      }
-      if (parity != sum) {
-        ESP_LOGD(TAG, "Parity failure on byte %d", i);
-        valid = false;
-      }
+    if (len == 8) {
+      ESP_LOGD(TAG, "AcuRite data: %02x %02x %02x %02x %02x %02x %02x %02x", 
+               data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7]);
+    } else {
+      ESP_LOGD(TAG, "AcuRite data: %02x %02x %02x %02x %02x %02x %02x", 
+               data[0], data[1], data[2], data[3], data[4], data[5], data[6]);
     }
-
+    
     // check checksum
     uint8_t sum = 0;
-    for (int32_t i = 0; i <= 5; i++) {
+    for (int32_t i = 0; i < (len - 1); i++) {
       sum += data[i];
     }
-    if (sum != data[6]) {
-      ESP_LOGD(TAG, "Checksum failure %02x vs %02x", sum, data[6]);
+    if (sum != data[len - 1]) {
+      ESP_LOGD(TAG, "Checksum failure %02x vs %02x", sum, data[len - 1]);
       valid = false;
     }
 
-    // device info
-    ESP_LOGD(TAG, "ID: %04x", ((data[0] & 0x3F) << 7) | (data[1] & 0x7F));
-    ESP_LOGD(TAG, "Channel: %c",  channel[data[0] >> 6]);
-    ESP_LOGD(TAG, "Signature: %02x", data[2] & 0x7F);
-    
-    // data
-    if (valid) {
-      float humidity = data[3] & 0x7F;
-      float temperature = ((data[4] & 0x0F) << 7) | (data[5] & 0x7F);
-      temperature = (temperature - 1000) / 10.0;
-      ESP_LOGD(TAG, "Got temperature=%.1f°C humidity=%.1f%%", temperature, humidity);
-      if (this->temperature_sensor_ != nullptr)
-        this->temperature_sensor_->publish_state(temperature);
-      if (this->humidity_sensor_ != nullptr)
-        this->humidity_sensor_->publish_state(humidity);
-      this->status_clear_warning();
+    // temperature sensor
+    if (len == 7) {
+      // check parity (bytes 1 to 5)
+      for (int32_t i = 1; i <= 5; i++) {
+        uint8_t parity = (data[i] >> 7) & 1;
+        uint8_t sum = 0;
+        for (int32_t b = 0; b <= 6; b++) {
+          sum ^= (data[i] >> b) & 1;
+        }
+        if (parity != sum) {
+          ESP_LOGD(TAG, "Parity failure on byte %d", i);
+          valid = false;
+        }
+      }
+
+      // device info
+      ESP_LOGD(TAG, "ID: %04x", ((data[0] & 0x3F) << 7) | (data[1] & 0x7F));
+      ESP_LOGD(TAG, "Channel: %c",  channel[data[0] >> 6]);
+      ESP_LOGD(TAG, "Signature: %02x", data[2] & 0x7F);
+        
+      // data
+      if (valid) {
+        float humidity = data[3] & 0x7F;
+        float temperature = ((data[4] & 0x0F) << 7) | (data[5] & 0x7F);
+        temperature = (temperature - 1000) / 10.0;
+        ESP_LOGD(TAG, "Got temperature=%.1f°C humidity=%.1f%%", temperature, humidity);
+        if (this->temperature_sensor_ != nullptr)
+          this->temperature_sensor_->publish_state(temperature);
+        if (this->humidity_sensor_ != nullptr)
+          this->humidity_sensor_->publish_state(humidity);
+        this->status_clear_warning();
+      }
     }
   }
 }

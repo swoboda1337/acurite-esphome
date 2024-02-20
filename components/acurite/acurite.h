@@ -22,7 +22,7 @@ struct AcuRiteStore {
   volatile uint32_t bits;
   volatile uint32_t syncs;
   volatile uint32_t prev;
-  volatile uint8_t data[7];
+  volatile uint8_t data[8];
   ISRInternalGPIOPin pin;
 };
 
