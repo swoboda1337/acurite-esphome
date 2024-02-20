@@ -37,7 +37,8 @@ namespace acurite {
 static const char *const TAG = "acurite";
 
 void IRAM_ATTR AcuRiteStore::gpio_intr(AcuRiteStore *arg) {
-  bool on = arg->pin.digital_read();
+  bool one, zero;
+  uint32_t bit, idx;
   uint32_t curr = micros();
   int32_t diff = curr - arg->prev;
   arg->prev = curr;
@@ -47,14 +48,14 @@ void IRAM_ATTR AcuRiteStore::gpio_intr(AcuRiteStore *arg) {
       // reset state and move to sync detection at the start of 'on'
       arg->bits = 0;
       arg->syncs = 0;
-      if (on == true) {
+      if (arg->pin.digital_read() == true) {
         arg->state = ACURITE_SYNC_ON;
       }
       break;
     
     case ACURITE_SYNC_ON:
       // confirm the duration of 'on' was correct
-      if (on == false && std::abs(ACURITE_SYNC - diff) < ACURITE_DELTA) {
+      if (std::abs(ACURITE_SYNC - diff) < ACURITE_DELTA) {
         arg->state = ACURITE_SYNC_OFF;
       } else {
         arg->state = ACURITE_INIT;
@@ -63,7 +64,7 @@ void IRAM_ATTR AcuRiteStore::gpio_intr(AcuRiteStore *arg) {
     
     case ACURITE_SYNC_OFF:
       // confirm the duration of 'off' was correct
-      if (on == true && std::abs(ACURITE_SYNC - diff) < ACURITE_DELTA) {
+      if (std::abs(ACURITE_SYNC - diff) < ACURITE_DELTA) {
         // sync sequence is 4 'on's followed by 4 'off's (same duration)
         // either go back to sync detection or move on to bit detection
         arg->syncs++;
@@ -78,21 +79,19 @@ void IRAM_ATTR AcuRiteStore::gpio_intr(AcuRiteStore *arg) {
       break;
 
     case ACURITE_BIT_ON:
-      if (on == false) {
-        // use the duration of 'on' to determine if this was a one or a zero
-        uint32_t idx = arg->bits / 8;
-        uint32_t bit = 1 << (7 - (arg->bits & 7));
-        if (std::abs(ACURITE_ONE - diff) < ACURITE_DELTA) {
+      // use the duration of 'on' to determine if this was a one or a zero
+      one = std::abs(ACURITE_ONE - diff) < ACURITE_DELTA;
+      zero = std::abs(ACURITE_ZERO - diff) < ACURITE_DELTA;
+      if (one || zero) {
+        idx = arg->bits / 8;
+        bit = 1 << (7 - (arg->bits & 7));
+        if (one) {
           arg->data[idx] |=  bit;
-          arg->bits++;
-          arg->state = (arg->bits == 7 * 8) ? ACURITE_DONE : ACURITE_BIT_OFF;
-        } else if (std::abs(ACURITE_ZERO - diff) < ACURITE_DELTA) {
-          arg->data[idx] &= ~bit;
-          arg->bits++;
-          arg->state = (arg->bits == 7 * 8) ? ACURITE_DONE : ACURITE_BIT_OFF;
         } else {
-          arg->state = ACURITE_INIT;
+          arg->data[idx] &= ~bit;
         }
+        arg->bits++;
+        arg->state = (arg->bits == 7 * 8) ? ACURITE_DONE : ACURITE_BIT_OFF;
       } else {
         arg->state = ACURITE_INIT;
       }
@@ -100,11 +99,14 @@ void IRAM_ATTR AcuRiteStore::gpio_intr(AcuRiteStore *arg) {
     
     case ACURITE_BIT_OFF:
       // confirm the duration of 'off' was not too large
-      if (on == true && diff < ACURITE_SYNC) {
+      if (diff < ACURITE_SYNC) {
         arg->state = ACURITE_BIT_ON;
       } else {
         arg->state = ACURITE_INIT;
       }
+      break;
+    
+    default:
       break;
   }
 }
@@ -202,9 +204,10 @@ uint8_t AcuRite::singleTransfer(uint8_t address, uint8_t value)
 void AcuRite::setup() {
   ESP_LOGD(TAG, "AcuRite Setup");
 
-  // dio2 is connected to the raw output of the ook demodulator 
+  // dio2 is connected to the output of the ook demodulator, 
   // when the signal state is on the gpio will go high and when
-  // it is off the gpio will go low 
+  // it is off the gpio will go low, trigger on both edges in 
+  // order to detect on duration  
   dio2_->setup();
   store.state = ACURITE_INIT;
   store.pin = dio2_->to_isr();
@@ -239,9 +242,10 @@ void AcuRite::setup() {
   // set freq
   setFrequency(433920000);
 
-  // set bw to 50 kHz as this should result in ~20 usecs between
-  // samples which is more than enough to detect the difference in
-  // duration between ook bits
+  // set bw to 50 kHz as this should result in ~20 usecs between samples, 
+  // ie a minimum of 20 usecs between ook demodulator / dio2 gpio states
+  // changes, which is fast enough to detect the difference in duration 
+  // between acurite ook bits which have a minimum duration of ~200 usecs
   writeRegister(REG_RX_BW, 0x0B);
 
   // disable crc check and enable continuous mode
@@ -260,17 +264,6 @@ void AcuRite::setup() {
   writeRegister(REG_OP_MODE, MODE_MOD_OOK | MODE_LF_ON | MODE_RX);
   delay(20);
 }
-
-void AcuRite::dump_config() {
-  ESP_LOGD(TAG, "ACURITE:");
-  if (this->is_failed()) {
-    ESP_LOGE(TAG, "Communication with ACURITE failed!");
-  }
-  LOG_SENSOR("  ", "Temperature", this->temperature_sensor_);
-  LOG_SENSOR("  ", "Humidity", this->humidity_sensor_);
-}
-
-float AcuRite::get_setup_priority() const { return setup_priority::HARDWARE; }
 
 }  // namespace acurite
 }  // namespace esphome
