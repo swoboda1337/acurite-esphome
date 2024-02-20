@@ -225,7 +225,7 @@ void AcuRite::setup() {
   delay(10);
 
   // start spi
-  this->spi_setup();
+  spi_setup();
 
   // check silicon version to make sure hw is ok
   uint8_t version = readRegister(REG_VERSION);
@@ -243,7 +243,7 @@ void AcuRite::setup() {
   setFrequency(433920000);
 
   // set bw to 50 kHz as this should result in ~20 usecs between samples, 
-  // ie a minimum of 20 usecs between ook demodulator / dio2 gpio states
+  // ie a minimum of 20 usecs between ook demodulator / dio2 gpio state
   // changes, which is fast enough to detect the difference in duration 
   // between acurite ook bits which have a minimum duration of ~200 usecs
   writeRegister(REG_RX_BW, 0x0B);
