@@ -1,8 +1,4 @@
-ESPHome SX127X driver + AcuRite OOK signal decoder. 
-
-Allows for an easy intergration of AcuRite sensors into Home Assistant.
-
-Tested with the LILYGO LoRa32 V2.1_1.6 board.
+ESPHome SX127X driver + AcuRite OOK signal decoder. Allows for an easy intergration of AcuRite sensors into Home Assistant. Tested with the LILYGO LoRa32 V2.1_1.6 board.
 
 Example yaml to use in esphome device config:
 
