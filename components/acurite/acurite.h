@@ -39,6 +39,7 @@ class AcuRite : public Component,
 
   void set_temperature_sensor(sensor::Sensor *temperature_sensor) { temperature_sensor_ = temperature_sensor; }
   void set_humidity_sensor(sensor::Sensor *humidity_sensor) { humidity_sensor_ = humidity_sensor; }
+  void set_rain_sensor(sensor::Sensor *rain_sensor) { rain_sensor_ = rain_sensor; }
   void set_rst_pin(InternalGPIOPin *rst) { this->rst_ = rst; }
   void set_nss_pin(InternalGPIOPin *nss) { this->nss_ = nss; }
   void set_dio2_pin(InternalGPIOPin *dio2) { this->dio2_ = dio2; }
@@ -46,6 +47,7 @@ class AcuRite : public Component,
  protected:
   sensor::Sensor *temperature_sensor_{nullptr};
   sensor::Sensor *humidity_sensor_{nullptr};
+  sensor::Sensor *rain_sensor_{nullptr};
   InternalGPIOPin *rst_{nullptr};
   InternalGPIOPin *nss_{nullptr};
   InternalGPIOPin *dio2_{nullptr};

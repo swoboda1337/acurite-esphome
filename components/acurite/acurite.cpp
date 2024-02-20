@@ -171,11 +171,20 @@ void AcuRite::loop() {
         float temperature = ((data[4] & 0x0F) << 7) | (data[5] & 0x7F);
         temperature = (temperature - 1000) / 10.0;
         ESP_LOGD(TAG, "Got temperature=%.1f°C humidity=%.1f%%", temperature, humidity);
-        if (this->temperature_sensor_ != nullptr)
-          this->temperature_sensor_->publish_state(temperature);
-        if (this->humidity_sensor_ != nullptr)
-          this->humidity_sensor_->publish_state(humidity);
-        this->status_clear_warning();
+        if (temperature_sensor_ != nullptr) {
+          temperature_sensor_->publish_state(temperature);
+        }
+        if (humidity_sensor_ != nullptr) {
+          humidity_sensor_->publish_state(humidity);
+        }
+        status_clear_warning();
+      }
+    } else if (len == 8 && valid) {
+      int32_t counter = ((data[4] & 0x3F) << 14) | ((data[5] & 0x3F) << 7) | ((data[6] & 0x3F) << 0);
+      float rainfall = (float)counter / 4.0;
+      ESP_LOGD(TAG, "Got rainfall=%.1fmm", rainfall);
+      if (rain_sensor_ != nullptr) {
+        rain_sensor_->publish_state(rainfall);
       }
     }
   }

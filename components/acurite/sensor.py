@@ -3,11 +3,12 @@ import esphome.config_validation as cv
 from esphome import pins
 from esphome.components import spi, sensor
 from esphome.const import (
-    CONF_HUMIDITY,
     CONF_ID,
     CONF_TEMPERATURE,
-    DEVICE_CLASS_HUMIDITY,
+    CONF_HUMIDITY,
     DEVICE_CLASS_TEMPERATURE,
+    DEVICE_CLASS_HUMIDITY,
+    DEVICE_CLASS_PRECIPITATION,
     STATE_CLASS_MEASUREMENT,
     UNIT_CELSIUS,
     UNIT_PERCENT,
@@ -16,6 +17,9 @@ from esphome.const import (
 CONF_NSS_PIN = 'nss_pin'
 CONF_RST_PIN = 'rst_pin'
 CONF_DIO2_PIN = 'dio2_pin'
+
+CONF_RAIN = 'rain'
+UNIT_MILLIMETER = "mm"
 
 DEPENDENCIES = ["spi"]
 
@@ -41,6 +45,12 @@ CONFIG_SCHEMA = (
                 unit_of_measurement=UNIT_PERCENT,
                 accuracy_decimals=1,
                 device_class=DEVICE_CLASS_HUMIDITY,
+                state_class=STATE_CLASS_MEASUREMENT,
+            ),
+            cv.Optional(CONF_RAIN): sensor.sensor_schema(
+                unit_of_measurement=UNIT_MILLIMETER,
+                accuracy_decimals=2,
+                device_class=DEVICE_CLASS_PRECIPITATION,
                 state_class=STATE_CLASS_MEASUREMENT,
             ),
         }
@@ -69,3 +79,7 @@ async def to_code(config):
     if humidity_config := config.get(CONF_HUMIDITY):
         sens = await sensor.new_sensor(humidity_config)
         cg.add(var.set_humidity_sensor(sens))
+
+    if rain_config := config.get(CONF_RAIN):
+        sens = await sensor.new_sensor(rain_config)
+        cg.add(var.set_rain_sensor(sens))

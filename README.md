@@ -20,6 +20,8 @@ Example yaml to use in esphome device config:
           name: "AcuRite Temperature"
         humidity:
           name: "AcuRite Humidity"
+        rain:
+          name: "AcuRite Rain"
         nss_pin: GPIO18
         rst_pin: GPIO23
         dio2_pin: GPIO32
