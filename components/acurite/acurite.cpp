@@ -131,7 +131,7 @@ void AcuRite::loop() {
       uint8_t parity = (data[i] >> 7) & 1;
       uint8_t sum = 0;
       for (int32_t b = 0; b <= 6; b++) {
-        sum ^= (store.data[i] >> b) & 1;
+        sum ^= (data[i] >> b) & 1;
       }
       if (parity != sum) {
         ESP_LOGD(TAG, "Parity failure on byte %d", i);
