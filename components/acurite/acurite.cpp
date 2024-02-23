@@ -6,28 +6,6 @@
 namespace esphome {
 namespace acurite {
 
-// registers
-#define REG_OP_MODE              0x01
-#define REG_FRF_MSB              0x06
-#define REG_FRF_MID              0x07
-#define REG_FRF_LSB              0x08
-#define REG_RX_BW                0x12
-#define REG_OOK_PEAK             0x14
-#define REG_SYNC_CONFIG          0x27
-#define REG_PACKET_CONFIG_1      0x30
-#define REG_PACKET_CONFIG_2      0x31
-#define REG_IRQ_FLAGS_1          0x3e
-#define REG_IRQ_FLAGS_2          0x3f
-#define REG_VERSION              0x42
-
-// modes
-#define MODE_MOD_OOK             0x20
-#define MODE_LF_ON               0x08
-#define MODE_SLEEP               0x00
-#define MODE_STDBY               0x01
-#define MODE_RX_FS               0x04
-#define MODE_RX                  0x05
-
 // acurite ook params
 #define ACURITE_SYNC   600
 #define ACURITE_ONE    400
@@ -190,98 +168,20 @@ void AcuRite::loop() {
   }
 }
 
-void AcuRite::setFrequency(uint64_t frequency)
-{
-  uint64_t frf = ((uint64_t)frequency << 19) / 32000000;
-  writeRegister(REG_FRF_MSB, (uint8_t)((frf >> 16) & 0xFF));
-  writeRegister(REG_FRF_MID, (uint8_t)((frf >> 8) & 0xFF));
-  writeRegister(REG_FRF_LSB, (uint8_t)((frf >> 0) & 0xFF));
-}
-
-uint8_t AcuRite::readRegister(uint8_t address)
-{
-  return singleTransfer(address & 0x7f, 0x00);
-}
-
-void AcuRite::writeRegister(uint8_t address, uint8_t value)
-{
-  singleTransfer(address | 0x80, value);
-}
-
-uint8_t AcuRite::singleTransfer(uint8_t address, uint8_t value)
-{
-  uint8_t response;
-  delegate_->begin_transaction();
-  nss_->digital_write(false);
-  delegate_->transfer(address);
-  response = delegate_->transfer(value);
-  nss_->digital_write(true);
-  delegate_->end_transaction();
-  return response;
-}
-
 void AcuRite::setup() {
   ESP_LOGD(TAG, "AcuRite Setup");
+
+  this->sx127x_start();
+  this->rx_start(433920000);
 
   // dio2 is connected to the output of the ook demodulator, 
   // when the signal state is on the gpio will go high and when
   // it is off the gpio will go low, trigger on both edges in 
   // order to detect on duration  
-  dio2_->setup();
+  // this->dio2_->setup();
   store.state = ACURITE_INIT;
   store.pin = dio2_->to_isr();
-  dio2_->attach_interrupt(AcuRiteStore::gpio_intr, &store, gpio::INTERRUPT_ANY_EDGE);
-
-  // init nss and set high
-  nss_->setup();
-  nss_->digital_write(true);
-
-  // init reset and toggle to reset chip
-  rst_->setup();
-  rst_->digital_write(false);
-  delay(1);
-  rst_->digital_write(true);
-  delay(10);
-
-  // start spi
-  spi_setup();
-
-  // check silicon version to make sure hw is ok
-  uint8_t version = readRegister(REG_VERSION);
-  ESP_LOGD(TAG, "SemTech ID: %0x", version);
-  if (version != 0x12) {
-    mark_failed();
-    return;
-  }
-
-  // need to sleep before changing some settings
-  writeRegister(REG_OP_MODE, MODE_MOD_OOK | MODE_LF_ON | MODE_SLEEP);
-  delay(20);
-
-  // set freq
-  setFrequency(433920000);
-
-  // set bw to 50 kHz as this should result in ~20 usecs between samples, 
-  // ie a minimum of 20 usecs between ook demodulator / dio2 gpio state
-  // changes, which is fast enough to detect the difference in duration 
-  // between acurite ook bits which have a minimum duration of ~200 usecs
-  writeRegister(REG_RX_BW, 0x0B);
-
-  // disable crc check and enable continuous mode
-  writeRegister(REG_PACKET_CONFIG_1, 0x80);
-  writeRegister(REG_PACKET_CONFIG_2, 0x00);
-
-  // disable bit synchronizer and sync generation
-  writeRegister(REG_SYNC_CONFIG, 0x00);
-  writeRegister(REG_OOK_PEAK, 0x08);
-
-  // enable rx mode  
-  writeRegister(REG_OP_MODE, MODE_MOD_OOK | MODE_LF_ON | MODE_STDBY);
-  delay(20);
-  writeRegister(REG_OP_MODE, MODE_MOD_OOK | MODE_LF_ON | MODE_RX_FS);
-  delay(20);
-  writeRegister(REG_OP_MODE, MODE_MOD_OOK | MODE_LF_ON | MODE_RX);
-  delay(20);
+  this->dio2_->attach_interrupt(AcuRiteStore::gpio_intr, &store, gpio::INTERRUPT_ANY_EDGE);
 }
 
 }  // namespace acurite

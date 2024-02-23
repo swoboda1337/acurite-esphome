@@ -1,7 +1,7 @@
 import esphome.codegen as cg
 import esphome.config_validation as cv
 from esphome import pins
-from esphome.components import spi, sensor
+from esphome.components import sensor, sx127x
 from esphome.const import (
     CONF_ID,
     CONF_TEMPERATURE,
@@ -14,27 +14,18 @@ from esphome.const import (
     UNIT_PERCENT,
 )
 
-CONF_NSS_PIN = 'nss_pin'
-CONF_RST_PIN = 'rst_pin'
-CONF_DIO2_PIN = 'dio2_pin'
-
 CONF_RAIN = 'rain'
 UNIT_MILLIMETER = "mm"
 
-DEPENDENCIES = ["spi"]
+AUTO_LOAD = ["sx127x"]
 
 acurite_ns = cg.esphome_ns.namespace("acurite")
-AcuRite = acurite_ns.class_(
-    "AcuRite", cg.Component, spi.SPIDevice
-)
+AcuRite = acurite_ns.class_("AcuRite", sx127x.SX127X)
 
 CONFIG_SCHEMA = (
     cv.Schema(
         {
             cv.GenerateID(): cv.declare_id(AcuRite),
-            cv.Required(CONF_RST_PIN): pins.internal_gpio_output_pin_schema,
-            cv.Required(CONF_NSS_PIN): pins.internal_gpio_output_pin_schema,
-            cv.Required(CONF_DIO2_PIN): pins.internal_gpio_input_pin_schema,
             cv.Optional(CONF_TEMPERATURE): sensor.sensor_schema(
                 unit_of_measurement=UNIT_CELSIUS,
                 accuracy_decimals=1,
@@ -55,31 +46,19 @@ CONFIG_SCHEMA = (
             ),
         }
     )
-    .extend(spi.spi_device_schema(False, 8e6, 'mode0'))
+    .extend(sx127x.SX127X_SCHEMA)
 )
 
 async def to_code(config):
     var = cg.new_Pvariable(config[CONF_ID])
-    await spi.register_spi_device(var, config)
     await cg.register_component(var, config)
-
-    rst_pin = await cg.gpio_pin_expression(config[CONF_RST_PIN])
-    cg.add(var.set_rst_pin(rst_pin))
-
-    nss_pin = await cg.gpio_pin_expression(config[CONF_NSS_PIN])
-    cg.add(var.set_nss_pin(nss_pin))
-
-    dio2_pin = await cg.gpio_pin_expression(config[CONF_DIO2_PIN])
-    cg.add(var.set_dio2_pin(dio2_pin))
-
+    await sx127x.setup_sx127x(var, config)
     if temperature_config := config.get(CONF_TEMPERATURE):
         sens = await sensor.new_sensor(temperature_config)
         cg.add(var.set_temperature_sensor(sens))
-
     if humidity_config := config.get(CONF_HUMIDITY):
         sens = await sensor.new_sensor(humidity_config)
         cg.add(var.set_humidity_sensor(sens))
-
     if rain_config := config.get(CONF_RAIN):
         sens = await sensor.new_sensor(rain_config)
         cg.add(var.set_rain_sensor(sens))

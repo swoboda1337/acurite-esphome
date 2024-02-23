@@ -2,7 +2,7 @@
 
 #include "esphome/core/component.h"
 #include "esphome/components/sensor/sensor.h"
-#include "esphome/components/spi/spi.h"
+#include "esphome/components/sx127x/sx127x.h"
 
 namespace esphome {
 namespace acurite {
@@ -26,11 +26,7 @@ struct AcuRiteStore {
   ISRInternalGPIOPin pin;
 };
 
-class AcuRite : public Component,
-                public spi::SPIDevice<spi::BIT_ORDER_MSB_FIRST, 
-                                      spi::CLOCK_POLARITY_LOW, 
-                                      spi::CLOCK_PHASE_LEADING,
-                                      spi::DATA_RATE_8MHZ> { 
+class AcuRite : public sx127x::SX127X { 
  public:
   void setup() override;
   void loop() override;
@@ -40,25 +36,11 @@ class AcuRite : public Component,
   void set_temperature_sensor(sensor::Sensor *temperature_sensor) { temperature_sensor_ = temperature_sensor; }
   void set_humidity_sensor(sensor::Sensor *humidity_sensor) { humidity_sensor_ = humidity_sensor; }
   void set_rain_sensor(sensor::Sensor *rain_sensor) { rain_sensor_ = rain_sensor; }
-  void set_rst_pin(InternalGPIOPin *rst) { this->rst_ = rst; }
-  void set_nss_pin(InternalGPIOPin *nss) { this->nss_ = nss; }
-  void set_dio2_pin(InternalGPIOPin *dio2) { this->dio2_ = dio2; }
 
  protected:
   sensor::Sensor *temperature_sensor_{nullptr};
   sensor::Sensor *humidity_sensor_{nullptr};
   sensor::Sensor *rain_sensor_{nullptr};
-  InternalGPIOPin *rst_{nullptr};
-  InternalGPIOPin *nss_{nullptr};
-  InternalGPIOPin *dio2_{nullptr};
-
- private:
-  static void interrupt(uint32_t *arg);
-  void setBitrate(uint32_t duration);
-  void setFrequency(uint64_t frequency);
-  uint8_t readRegister(uint8_t address);
-  void writeRegister(uint8_t address, uint8_t value);
-  uint8_t singleTransfer(uint8_t address, uint8_t value);
   AcuRiteStore store;
 };
 
