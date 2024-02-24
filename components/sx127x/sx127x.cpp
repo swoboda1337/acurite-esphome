@@ -19,8 +19,6 @@ const uint8_t REG_IRQ_FLAGS_1     = 0x3e;
 const uint8_t REG_IRQ_FLAGS_2     = 0x3f;
 const uint8_t REG_VERSION         = 0x42;
 
-const uint8_t MODE_OOK   = 0x20;
-const uint8_t MODE_FSK   = 0x00;
 const uint8_t MODE_LF_ON = 0x08;
 const uint8_t MODE_SLEEP = 0x00;
 const uint8_t MODE_STDBY = 0x01;
