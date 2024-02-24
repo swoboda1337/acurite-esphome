@@ -12,7 +12,13 @@ Example yaml to use in esphome device config:
       clk_pin: GPIO5
       mosi_pin: GPIO27
       miso_pin: GPIO19
-      interface: hardware
+    
+    sx127x:
+      nss_pin: GPIO18
+      rst_pin: GPIO23
+      frequency: 433920000
+      bandwidth: "50_0"
+      modulation: "ook"
     
     sensor:
       - platform: acurite
@@ -22,6 +28,4 @@ Example yaml to use in esphome device config:
           name: "AcuRite Humidity"
         rain:
           name: "AcuRite Rain"
-        nss_pin: GPIO18
-        rst_pin: GPIO23
-        dio2_pin: GPIO32
+        pin: GPIO32
