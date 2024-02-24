@@ -29,14 +29,6 @@ const uint8_t OOK_TRESHOLD_PEAK = 0x08;
 
 static const char *const TAG = "sx127x";
 
-void SX127X::set_frequency_(uint64_t frequency)
-{
-  uint64_t frf = ((uint64_t)frequency << 19) / 32000000;
-  write_register_(REG_FRF_MSB, (uint8_t)((frf >> 16) & 0xFF));
-  write_register_(REG_FRF_MID, (uint8_t)((frf >> 8) & 0xFF));
-  write_register_(REG_FRF_LSB, (uint8_t)((frf >> 0) & 0xFF));
-}
-
 uint8_t SX127X::read_register_(uint8_t reg)
 {
   return single_transfer_((uint8_t)reg & 0x7f, 0x00);
@@ -59,11 +51,8 @@ uint8_t SX127X::single_transfer_(uint8_t address, uint8_t value)
   return response;
 }
 
-void SX127X::sx127x_setup_() {
+void SX127X::setup() {
   ESP_LOGD(TAG, "SX127X setup");
-
-  // setup dio2
-  dio2_->setup();
 
   // setup nss and set high
   nss_->setup();
@@ -87,38 +76,18 @@ void SX127X::sx127x_setup_() {
     return;
   }
 
-  // need to sleep before changing some settings
-  write_register_(REG_OP_MODE, MODE_LF_ON | MODE_SLEEP);
-  delay(20); 
-}
-
-void SX127X::rx_stop_() {
-  ESP_LOGD(TAG, "SX127X stopping rx");
-  
-  // disable rx mode and sleep
-  write_register_(REG_OP_MODE, MODE_LF_ON | MODE_STDBY);
-  delay(1);
-  write_register_(REG_OP_MODE, MODE_LF_ON | MODE_SLEEP);
-  delay(1);
-}
-
-void SX127X::rx_start_(uint64_t frequency, SX127XRxBw bandwidth, SX127XRxMod modulation) {
-  ESP_LOGD(TAG, "SX127X starting rx");
-
   // set modulation and make sure transceiver is in sleep mode
-  rx_mod_ = modulation;
-  write_register_(REG_OP_MODE, modulation | MODE_LF_ON | MODE_SLEEP);
+  write_register_(REG_OP_MODE, modulation_ | MODE_LF_ON | MODE_SLEEP);
   delay(1);
 
   // set freq
-  set_frequency_(frequency);
-
-  // set the channel bw, this will determine the sample rate, make sure it is 
-  // appropriate for the data you wish to decode, if the bandwidth is 10khz 
-  // that will result in a sample every 100 usecs, that doesn't mean the data 
-  // isr will trigger that often its just how responsive it will be to changes in 
-  // the signal
-  write_register_(REG_RX_BW, bandwidth);
+  uint64_t frf = ((uint64_t)frequency_ << 19) / 32000000;
+  write_register_(REG_FRF_MSB, (uint8_t)((frf >> 16) & 0xFF));
+  write_register_(REG_FRF_MID, (uint8_t)((frf >> 8) & 0xFF));
+  write_register_(REG_FRF_LSB, (uint8_t)((frf >> 0) & 0xFF));
+  
+  // set the channel bw
+  write_register_(REG_RX_BW, bandwidth_);
 
   // disable packet mode
   write_register_(REG_PACKET_CONFIG_1, 0x00);
@@ -129,12 +98,21 @@ void SX127X::rx_start_(uint64_t frequency, SX127XRxBw bandwidth, SX127XRxMod mod
   write_register_(REG_OOK_PEAK, OOK_TRESHOLD_PEAK);
 
   // enable rx mode  
-  write_register_(REG_OP_MODE, modulation | MODE_LF_ON | MODE_STDBY);
+  write_register_(REG_OP_MODE, modulation_ | MODE_LF_ON | MODE_STDBY);
   delay(1);
-  write_register_(REG_OP_MODE, modulation | MODE_LF_ON | MODE_RX_FS);
+  write_register_(REG_OP_MODE, modulation_ | MODE_LF_ON | MODE_RX_FS);
   delay(1);
-  write_register_(REG_OP_MODE, modulation | MODE_LF_ON | MODE_RX);
+  write_register_(REG_OP_MODE, modulation_ | MODE_LF_ON | MODE_RX);
 }
+
+void SX127X::dump_config() {
+  ESP_LOGCONFIG(TAG, "SX127X:");
+  ESP_LOGCONFIG(TAG, "  Frequency %d", this->frequency_);
+  ESP_LOGCONFIG(TAG, "  Modulation %02x", this->modulation_);
+  ESP_LOGCONFIG(TAG, "  Bandwidth %02x", this->bandwidth_);
+}
+
+float SX127X::get_setup_priority() const { return setup_priority::DATA; }
 
 }  // namespace sx127x
 }  // namespace esphome

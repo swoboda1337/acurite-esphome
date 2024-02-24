@@ -171,18 +171,14 @@ void AcuRite::loop() {
 void AcuRite::setup() {
   ESP_LOGD(TAG, "AcuRite Setup");
 
-  // start rx
-  this->sx127x_setup_();
-  this->rx_start_(433920000, sx127x::RX_BANDWIDTH_50_0, sx127x::RX_MODULATION_OOK);
-
-  // dio2 is connected to the output of the ook demodulator, 
+  // the gpio is connected to the output of the ook demodulator, 
   // when the signal state is on the gpio will go high and when
   // it is off the gpio will go low, trigger on both edges in 
   // order to detect on duration  
-  // this->dio2_->setup();
+  this->pin_->setup();
   store.state = ACURITE_INIT;
-  store.pin = dio2_->to_isr();
-  this->dio2_->attach_interrupt(AcuRiteStore::gpio_intr, &store, gpio::INTERRUPT_ANY_EDGE);
+  store.pin = pin_->to_isr();
+  this->pin_->attach_interrupt(AcuRiteStore::gpio_intr, &store, gpio::INTERRUPT_ANY_EDGE);
 }
 
 }  // namespace acurite

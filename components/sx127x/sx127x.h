@@ -1,7 +1,6 @@
 #pragma once
 
 #include "esphome/core/component.h"
-#include "esphome/components/sensor/sensor.h"
 #include "esphome/components/spi/spi.h"
 
 namespace esphome {
@@ -31,9 +30,9 @@ enum SX127XRxBw : uint8_t {
   RX_BANDWIDTH_250_0 = 0x01
 };
 
-enum SX127XRxMod : uint8_t {
-  RX_MODULATION_FSK = 0x00,
-  RX_MODULATION_OOK = 0x20
+enum SX127XMod : uint8_t {
+  MODULATION_FSK = 0x00,
+  MODULATION_OOK = 0x20
 };
 
 class SX127X : public Component,
@@ -42,28 +41,25 @@ class SX127X : public Component,
                                      spi::CLOCK_PHASE_LEADING,
                                      spi::DATA_RATE_8MHZ> { 
  public:
-  float get_setup_priority() const override { return setup_priority::HARDWARE; }
+  void setup() override;
+  void dump_config() override;
+  float get_setup_priority() const override;
 
   void set_rst_pin(InternalGPIOPin *rst) { this->rst_ = rst; }
   void set_nss_pin(InternalGPIOPin *nss) { this->nss_ = nss; }
-  void set_dio0_pin(InternalGPIOPin *dio0) { this->dio0_ = dio0; }
-  void set_dio1_pin(InternalGPIOPin *dio1) { this->dio1_ = dio1; }
-  void set_dio2_pin(InternalGPIOPin *dio2) { this->dio2_ = dio2; }
+  void set_frequency(uint32_t frequency) { this->frequency_ = frequency; }
+  void set_rx_modulation(SX127XMod modulation) { this->modulation_ = modulation; }
+  void set_rx_bandwidth(SX127XRxBw bandwidth) { this->bandwidth_ = bandwidth; }
 
  protected:
-  void sx127x_setup_();
-  void rx_stop_();
-  void rx_start_(uint64_t frequency, SX127XRxBw bandwidth, SX127XRxMod modulation);
-  void set_frequency_(uint64_t frequency);
   void write_register_(uint8_t address, uint8_t value);
   uint8_t single_transfer_(uint8_t address, uint8_t value);
   uint8_t read_register_(uint8_t address);
-  SX127XRxMod rx_mod_;
   InternalGPIOPin *rst_{nullptr};
   InternalGPIOPin *nss_{nullptr};
-  InternalGPIOPin *dio0_{nullptr};
-  InternalGPIOPin *dio1_{nullptr};
-  InternalGPIOPin *dio2_{nullptr};
+  SX127XRxBw bandwidth_; 
+  SX127XMod modulation_;
+  uint32_t frequency_;
 };
 
 }  // namespace sx127x

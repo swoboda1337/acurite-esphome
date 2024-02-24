@@ -26,7 +26,7 @@ struct AcuRiteStore {
   ISRInternalGPIOPin pin;
 };
 
-class AcuRite : public sx127x::SX127X { 
+class AcuRite : public Component { 
  public:
   void setup() override;
   void loop() override;
@@ -36,11 +36,13 @@ class AcuRite : public sx127x::SX127X {
   void set_temperature_sensor(sensor::Sensor *temperature_sensor) { temperature_sensor_ = temperature_sensor; }
   void set_humidity_sensor(sensor::Sensor *humidity_sensor) { humidity_sensor_ = humidity_sensor; }
   void set_rain_sensor(sensor::Sensor *rain_sensor) { rain_sensor_ = rain_sensor; }
+  void set_pin(InternalGPIOPin *pin) { this->pin_ = pin; }
 
  protected:
   sensor::Sensor *temperature_sensor_{nullptr};
   sensor::Sensor *humidity_sensor_{nullptr};
   sensor::Sensor *rain_sensor_{nullptr};
+  InternalGPIOPin *pin_{nullptr};
   AcuRiteStore store;
 };
 

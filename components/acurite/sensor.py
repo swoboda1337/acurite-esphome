@@ -1,7 +1,7 @@
 import esphome.codegen as cg
 import esphome.config_validation as cv
 from esphome import pins
-from esphome.components import sensor, sx127x
+from esphome.components import sensor
 from esphome.const import (
     CONF_ID,
     CONF_TEMPERATURE,
@@ -16,11 +16,10 @@ from esphome.const import (
 
 CONF_RAIN = 'rain'
 UNIT_MILLIMETER = "mm"
-
-AUTO_LOAD = ["sx127x"]
+CONF_PIN = 'pin'
 
 acurite_ns = cg.esphome_ns.namespace("acurite")
-AcuRite = acurite_ns.class_("AcuRite", sx127x.SX127X)
+AcuRite = acurite_ns.class_("AcuRite", cg.Component)
 
 CONFIG_SCHEMA = (
     cv.Schema(
@@ -44,15 +43,14 @@ CONFIG_SCHEMA = (
                 device_class=DEVICE_CLASS_PRECIPITATION,
                 state_class=STATE_CLASS_MEASUREMENT,
             ),
+            cv.Required(CONF_PIN): pins.internal_gpio_input_pin_schema,
         }
     )
-    .extend(sx127x.SX127X_SCHEMA)
 )
 
 async def to_code(config):
     var = cg.new_Pvariable(config[CONF_ID])
     await cg.register_component(var, config)
-    await sx127x.setup_sx127x(var, config)
     if temperature_config := config.get(CONF_TEMPERATURE):
         sens = await sensor.new_sensor(temperature_config)
         cg.add(var.set_temperature_sensor(sens))
@@ -62,3 +60,8 @@ async def to_code(config):
     if rain_config := config.get(CONF_RAIN):
         sens = await sensor.new_sensor(rain_config)
         cg.add(var.set_rain_sensor(sens))
+    if pin_cfg := config.get(CONF_PIN):
+        pin = await cg.gpio_pin_expression(pin_cfg)
+        cg.add(var.set_pin(pin))
+
+
