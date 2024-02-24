@@ -171,8 +171,9 @@ void AcuRite::loop() {
 void AcuRite::setup() {
   ESP_LOGD(TAG, "AcuRite Setup");
 
-  this->sx127x_start();
-  this->rx_start(433920000);
+  // start rx
+  this->sx127x_setup_();
+  this->rx_start_(433920000, sx127x::RX_BANDWIDTH_50_0, sx127x::RX_MODULATION_OOK);
 
   // dio2 is connected to the output of the ook demodulator, 
   // when the signal state is on the gpio will go high and when
