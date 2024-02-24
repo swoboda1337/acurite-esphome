@@ -58,7 +58,7 @@ class SX127X : public Component,
   void write_register_(uint8_t address, uint8_t value);
   uint8_t single_transfer_(uint8_t address, uint8_t value);
   uint8_t read_register_(uint8_t address);
-
+  SX127XRxMod rx_mod_;
   InternalGPIOPin *rst_{nullptr};
   InternalGPIOPin *nss_{nullptr};
   InternalGPIOPin *dio0_{nullptr};

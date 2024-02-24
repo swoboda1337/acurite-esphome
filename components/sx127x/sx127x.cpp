@@ -105,7 +105,8 @@ void SX127X::rx_stop_() {
 void SX127X::rx_start_(uint64_t frequency, SX127XRxBw bandwidth, SX127XRxMod modulation) {
   ESP_LOGD(TAG, "SX127X starting rx");
 
-  // write modulation
+  // set modulation and make sure transceiver is in sleep mode
+  rx_mod_ = modulation;
   write_register_(REG_OP_MODE, modulation | MODE_LF_ON | MODE_SLEEP);
   delay(1);
 
