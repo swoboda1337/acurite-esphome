@@ -20,32 +20,32 @@ Modulation = sx127x_ns.enum("SX127XMod")
 Bandwidth = sx127x_ns.enum("SX127XRxBw")
 
 MODULATION = {
-    "fsk": Modulation.MODULATION_FSK,
-    "ook": Modulation.MODULATION_OOK,
+    "FSK": Modulation.MODULATION_FSK,
+    "OOK": Modulation.MODULATION_OOK,
 }
 
 BANDWIDTH = {
-    "2_6": Bandwidth.RX_BANDWIDTH_2_6,
-    "3_1": Bandwidth.RX_BANDWIDTH_3_1,
-    "3_9": Bandwidth.RX_BANDWIDTH_3_9,
-    "5_2": Bandwidth.RX_BANDWIDTH_5_2,
-    "6_3": Bandwidth.RX_BANDWIDTH_6_3,
-    "7_8": Bandwidth.RX_BANDWIDTH_7_8,
-    "10_4": Bandwidth.RX_BANDWIDTH_10_4,
-    "12_5": Bandwidth.RX_BANDWIDTH_12_5,
-    "15_6": Bandwidth.RX_BANDWIDTH_15_6,
-    "20_8": Bandwidth.RX_BANDWIDTH_20_8,
-    "25_0": Bandwidth.RX_BANDWIDTH_25_0,
-    "31_3": Bandwidth.RX_BANDWIDTH_31_3,
-    "41_7": Bandwidth.RX_BANDWIDTH_41_7,
-    "50_0": Bandwidth.RX_BANDWIDTH_50_0,
-    "62_5": Bandwidth.RX_BANDWIDTH_62_5,
-    "83_3": Bandwidth.RX_BANDWIDTH_83_3,
-    "100_0": Bandwidth.RX_BANDWIDTH_100_0,
-    "125_0": Bandwidth.RX_BANDWIDTH_125_0,
-    "166_7": Bandwidth.RX_BANDWIDTH_166_7,
-    "200_0": Bandwidth.RX_BANDWIDTH_200_0,
-    "250_0": Bandwidth.RX_BANDWIDTH_250_0
+    "2_6kHz": Bandwidth.RX_BANDWIDTH_2_6,
+    "3_1kHz": Bandwidth.RX_BANDWIDTH_3_1,
+    "3_9kHz": Bandwidth.RX_BANDWIDTH_3_9,
+    "5_2kHz": Bandwidth.RX_BANDWIDTH_5_2,
+    "6_3kHz": Bandwidth.RX_BANDWIDTH_6_3,
+    "7_8kHz": Bandwidth.RX_BANDWIDTH_7_8,
+    "10_4kHz": Bandwidth.RX_BANDWIDTH_10_4,
+    "12_5kHz": Bandwidth.RX_BANDWIDTH_12_5,
+    "15_6kHz": Bandwidth.RX_BANDWIDTH_15_6,
+    "20_8kHz": Bandwidth.RX_BANDWIDTH_20_8,
+    "25_0kHz": Bandwidth.RX_BANDWIDTH_25_0,
+    "31_3kHz": Bandwidth.RX_BANDWIDTH_31_3,
+    "41_7kHz": Bandwidth.RX_BANDWIDTH_41_7,
+    "50_0kHz": Bandwidth.RX_BANDWIDTH_50_0,
+    "62_5kHz": Bandwidth.RX_BANDWIDTH_62_5,
+    "83_3kHz": Bandwidth.RX_BANDWIDTH_83_3,
+    "100_0kHz": Bandwidth.RX_BANDWIDTH_100_0,
+    "125_0kHz": Bandwidth.RX_BANDWIDTH_125_0,
+    "166_7kHz": Bandwidth.RX_BANDWIDTH_166_7,
+    "200_0kHz": Bandwidth.RX_BANDWIDTH_200_0,
+    "250_0kHz": Bandwidth.RX_BANDWIDTH_250_0
 }
 
 CONFIG_SCHEMA = (

@@ -33,15 +33,15 @@ class AcuRite : public Component {
 
   float get_setup_priority() const override { return setup_priority::HARDWARE; }
 
-  void set_temperature_sensor(sensor::Sensor *temperature_sensor) { temperature_sensor_ = temperature_sensor; }
-  void set_humidity_sensor(sensor::Sensor *humidity_sensor) { humidity_sensor_ = humidity_sensor; }
-  void set_rain_sensor(sensor::Sensor *rain_sensor) { rain_sensor_ = rain_sensor; }
+  void add_temperature_sensor(sensor::Sensor *temperature_sensor, uint16_t id) { temperature_sensors_[id] = temperature_sensor; }
+  void add_humidity_sensor(sensor::Sensor *humidity_sensor, uint16_t id) { humidity_sensors_[id] = humidity_sensor; }
+  void add_rain_sensor(sensor::Sensor *rain_sensor, uint16_t id) { rain_sensors_[id] = rain_sensor; }
   void set_pin(InternalGPIOPin *pin) { this->pin_ = pin; }
 
  protected:
-  sensor::Sensor *temperature_sensor_{nullptr};
-  sensor::Sensor *humidity_sensor_{nullptr};
-  sensor::Sensor *rain_sensor_{nullptr};
+  std::map<uint16_t, sensor::Sensor*> temperature_sensors_;
+  std::map<uint16_t, sensor::Sensor*> humidity_sensors_;
+  std::map<uint16_t, sensor::Sensor*> rain_sensors_;
   InternalGPIOPin *pin_{nullptr};
   AcuRiteStore store;
 };

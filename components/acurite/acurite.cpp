@@ -139,7 +139,8 @@ void AcuRite::loop() {
       }
 
       // device info
-      ESP_LOGD(TAG, "ID: %04x", ((data[0] & 0x3F) << 7) | (data[1] & 0x7F));
+      uint16_t id = ((data[0] & 0x3F) << 8) | (data[1] & 0xFF);
+      ESP_LOGD(TAG, "ID: %04x", id);
       ESP_LOGD(TAG, "Channel: %c",  channel[data[0] >> 6]);
       ESP_LOGD(TAG, "Signature: %02x", data[2] & 0x7F);
         
@@ -149,20 +150,22 @@ void AcuRite::loop() {
         float temperature = ((data[4] & 0x0F) << 7) | (data[5] & 0x7F);
         temperature = (temperature - 1000) / 10.0;
         ESP_LOGD(TAG, "Got temperature=%.1f°C humidity=%.1f%%", temperature, humidity);
-        if (temperature_sensor_ != nullptr) {
-          temperature_sensor_->publish_state(temperature);
+        if (temperature_sensors_[id] != nullptr) {
+          temperature_sensors_[id]->publish_state(temperature);
         }
-        if (humidity_sensor_ != nullptr) {
-          humidity_sensor_->publish_state(humidity);
+        if (humidity_sensors_[id] != nullptr) {
+          humidity_sensors_[id]->publish_state(humidity);
         }
         status_clear_warning();
       }
     } else if (len == 8 && valid) {
+      uint16_t id = ((data[0] & 0x3F) << 8) | (data[1] & 0xFF);
       int32_t counter = ((data[4] & 0x7F) << 14) | ((data[5] & 0x7F) << 7) | ((data[6] & 0x7F) << 0);
       float rainfall = (float)counter * 0.254;
+      ESP_LOGD(TAG, "ID: %04x", id);
       ESP_LOGD(TAG, "Got rainfall=%.1fmm", rainfall);
-      if (rain_sensor_ != nullptr) {
-        rain_sensor_->publish_state(rainfall);
+      if (rain_sensors_[id] != nullptr) {
+        rain_sensors_[id]->publish_state(rainfall);
       }
     }
   }

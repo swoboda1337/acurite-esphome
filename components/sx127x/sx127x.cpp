@@ -108,8 +108,11 @@ void SX127X::setup() {
 void SX127X::dump_config() {
   ESP_LOGCONFIG(TAG, "SX127X:");
   ESP_LOGCONFIG(TAG, "  Frequency %d", this->frequency_);
-  ESP_LOGCONFIG(TAG, "  Modulation %02x", this->modulation_);
+  ESP_LOGCONFIG(TAG, "  Modulation %s", this->modulation_ == MODULATION_FSK ? "FSK" : "OOK");
   ESP_LOGCONFIG(TAG, "  Bandwidth %02x", this->bandwidth_);
+  if (this->is_failed()) {
+    ESP_LOGE(TAG, "Configuring SX127X failed");
+  }
 }
 
 float SX127X::get_setup_priority() const { return setup_priority::DATA; }
