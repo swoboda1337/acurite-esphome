@@ -31,8 +31,8 @@ Example yaml to use in esphome device config:
       nss_pin: GPIO18
       rst_pin: GPIO23
       frequency: 433920000
-      bandwidth: "50_0kHz"
-      modulation: "OOK"
+      bandwidth: 50_0kHz
+      modulation: OOK
     
     sensor:
       - platform: acurite
