@@ -55,5 +55,5 @@ Example yaml to use in esphome device config:
           - id: 0x2838
             rain:
               name: "AcuRite Rain"
-          id: acurite_rain
+              id: acurite_rain
 
