@@ -183,16 +183,17 @@ void AcuRite::loop() {
   }
 }
 
-void AcuRite::zero_rain_values()
+void AcuRite::zero_rain_totals()
 {
   // clear rain totals, called from yaml
   for (auto const& s : rain_sensors_) {
     s.second->publish_state(0.0);
   }
+  ESP_LOGI(TAG, "Rain totals have been set to zero");
 }
 
 void AcuRite::setup() {
-  ESP_LOGD(TAG, "AcuRite Setup");
+  ESP_LOGI(TAG, "AcuRite Setup");
 
   // the gpio is connected to the output of the ook demodulator, 
   // when the signal state is on the gpio will go high and when

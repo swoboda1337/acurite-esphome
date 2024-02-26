@@ -20,9 +20,9 @@ Example yaml to use in esphome device config:
             minutes: 0
             hours: 0
             then:
-              # zero rain values at midnight
+              # zero rain totals at midnight
               lambda: |-
-                id(acurite_sensor).zero_rain_values();
+                id(acurite_sensor).zero_rain_totals();
     
     spi:
       clk_pin: GPIO5
