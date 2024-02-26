@@ -106,10 +106,13 @@ void SX127X::setup() {
 }
 
 void SX127X::dump_config() {
+  uint32_t rx_bw_mant = 16 + (this->bandwidth_ >> 3) * 4;
+  uint32_t rx_bw_exp = this->bandwidth_ & 0x7;
+  float rx_bw = (float)32000000 / (rx_bw_mant * (2 << (rx_bw_exp + 2))) * 2;
   ESP_LOGCONFIG(TAG, "SX127X:");
-  ESP_LOGCONFIG(TAG, "  Frequency %d", this->frequency_);
-  ESP_LOGCONFIG(TAG, "  Modulation %s", this->modulation_ == MODULATION_FSK ? "FSK" : "OOK");
-  ESP_LOGCONFIG(TAG, "  Bandwidth %02x", this->bandwidth_);
+  ESP_LOGCONFIG(TAG, "  Frequency: %f MHz", (float)this->frequency_ / 1000000);
+  ESP_LOGCONFIG(TAG, "  Bandwidth: %.1f kHz", (float)rx_bw / 1000);
+  ESP_LOGCONFIG(TAG, "  Modulation: %s", this->modulation_ == MODULATION_FSK ? "FSK" : "OOK");
   if (this->is_failed()) {
     ESP_LOGE(TAG, "Configuring SX127X failed");
   }

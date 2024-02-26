@@ -150,22 +150,34 @@ void AcuRite::loop() {
         float temperature = ((data[4] & 0x0F) << 7) | (data[5] & 0x7F);
         temperature = (temperature - 1000) / 10.0;
         ESP_LOGD(TAG, "Got temperature=%.1f°C humidity=%.1f%%", temperature, humidity);
-        if (temperature_sensors_[id] != nullptr) {
+        if (temperature_sensors_.count(id) > 0) {
           temperature_sensors_[id]->publish_state(temperature);
         }
-        if (humidity_sensors_[id] != nullptr) {
+        if (humidity_sensors_.count(id) > 0) {
           humidity_sensors_[id]->publish_state(humidity);
         }
         status_clear_warning();
       }
     } else if (len == 8 && valid) {
       uint16_t id = ((data[0] & 0x3F) << 8) | (data[1] & 0xFF);
-      int32_t counter = ((data[4] & 0x7F) << 14) | ((data[5] & 0x7F) << 7) | ((data[6] & 0x7F) << 0);
-      float rainfall = (float)counter * 0.254;
+      uint32_t counter = ((data[4] & 0x7F) << 14) | ((data[5] & 0x7F) << 7) | ((data[6] & 0x7F) << 0);
       ESP_LOGD(TAG, "ID: %04x", id);
-      ESP_LOGD(TAG, "Got rainfall=%.1fmm", rainfall);
-      if (rain_sensors_[id] != nullptr) {
-        rain_sensors_[id]->publish_state(rainfall);
+      ESP_LOGD(TAG, "Counter: %d", counter);
+      if (rain_sensors_.count(id) > 0) {
+        // check for new devices or device reset
+        if (rain_counters_.count(id) == 0 || counter < rain_counters_[id]) {
+          rain_counters_[id] = counter;
+        }
+
+        // update daily count
+        float mm = (float)(counter - rain_counters_[id]) * 0.254;
+        if (rain_sensors_[id]->has_state()) {
+          mm += rain_sensors_[id]->get_raw_state();
+        }
+        rain_sensors_[id]->publish_state(mm);
+
+        // update counter
+        rain_counters_[id] = counter;
       }
     }
   }

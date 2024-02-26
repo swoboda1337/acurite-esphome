@@ -42,6 +42,7 @@ class AcuRite : public Component {
   std::map<uint16_t, sensor::Sensor*> temperature_sensors_;
   std::map<uint16_t, sensor::Sensor*> humidity_sensors_;
   std::map<uint16_t, sensor::Sensor*> rain_sensors_;
+  std::map<uint16_t, uint32_t> rain_counters_;
   InternalGPIOPin *pin_{nullptr};
   AcuRiteStore store;
 };
