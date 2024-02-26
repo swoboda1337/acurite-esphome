@@ -5,13 +5,13 @@ The aucrite and the sx127x components are seporate. One provides data on a GPIO 
 If you run the acurite component without sensors it will print ids of all devices it finds. 
 
 Example yaml to use in esphome device config:
-
+    
     external_components:
       - source:
           type: git
           url: https://github.com/swoboda1337/acurite-esphome
           ref: main
-        refresh: 1d
+        refresh: 0d
     
     time:
       - platform: homeassistant
@@ -20,9 +20,8 @@ Example yaml to use in esphome device config:
             minutes: 0
             hours: 0
             then:
-              # reset rain count at midnight (can change this to weekly or 7am)
               lambda: |-
-                id(acurite_rain).publish_state(0.0);
+                id(acurite_sensor).zero_rain_sensors();
     
     spi:
       clk_pin: GPIO5
@@ -38,24 +37,20 @@ Example yaml to use in esphome device config:
     
     sensor:
       - platform: acurite
+        id: acurite_sensor
         pin: GPIO32
         devices:
-          - id: 0x1d2e
+          - device_id: 0x1d2e
             temperature:
               name: "AcuRite Temperature 1"
-              id: acurite_temperature1
             humidity:
-              name: "AcuRite Humidity"
-              id: acurite_humidity1
-          - id: 0x1fd2
+              name: "AcuRite Humidity 1"
+          - device_id: 0x1fd2
             temperature:
               name: "AcuRite Temperature 2"
-              id: acurite_temperature2
             humidity:
               name: "AcuRite Humidity 2"
-              id: acurite_humidity2
-          - id: 0x2838
+          - device_id: 0x2838
             rain:
               name: "AcuRite Rain"
-              id: acurite_rain
 
