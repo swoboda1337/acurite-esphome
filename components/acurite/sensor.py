@@ -15,6 +15,7 @@ from esphome.const import (
 )
 
 CONF_DEVICES = 'devices'
+CONF_DEVICE_ID = 'device_id'
 CONF_RAIN = 'rain'
 UNIT_MILLIMETER = "mm"
 CONF_PIN = 'pin'
@@ -24,7 +25,7 @@ AcuRite = acurite_ns.class_("AcuRite", cg.Component)
 
 DEVICE_SCHEMA = cv.Schema(
     {
-        cv.Optional(CONF_ID): cv.hex_int_range(max=0x3FFF),
+        cv.Optional(CONF_DEVICE_ID): cv.hex_int_range(max=0x3FFF),
         cv.Optional(CONF_TEMPERATURE): sensor.sensor_schema(
             unit_of_measurement=UNIT_CELSIUS,
             accuracy_decimals=1,
@@ -65,11 +66,11 @@ async def to_code(config):
     for device_conf in config[CONF_DEVICES]:
         if CONF_TEMPERATURE in device_conf:
             sens = await sensor.new_sensor(device_conf[CONF_TEMPERATURE])
-            cg.add(var.add_temperature_sensor(sens, device_conf[CONF_ID]))
+            cg.add(var.add_temperature_sensor(sens, device_conf[CONF_DEVICE_ID]))
         if CONF_HUMIDITY in device_conf:
             sens = await sensor.new_sensor(device_conf[CONF_HUMIDITY])
-            cg.add(var.add_humidity_sensor(sens, device_conf[CONF_ID]))
+            cg.add(var.add_humidity_sensor(sens, device_conf[CONF_DEVICE_ID]))
         if CONF_RAIN in device_conf:
             sens = await sensor.new_sensor(device_conf[CONF_RAIN])
-            cg.add(var.add_rain_sensor(sens, device_conf[CONF_ID]))
+            cg.add(var.add_rain_sensor(sens, device_conf[CONF_DEVICE_ID]))
 

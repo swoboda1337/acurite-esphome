@@ -38,6 +38,8 @@ class AcuRite : public Component {
   void add_rain_sensor(sensor::Sensor *rain_sensor, uint16_t id) { rain_sensors_[id] = rain_sensor; }
   void set_pin(InternalGPIOPin *pin) { this->pin_ = pin; }
 
+  void zero_rain_sensors();
+
  protected:
   std::map<uint16_t, sensor::Sensor*> temperature_sensors_;
   std::map<uint16_t, sensor::Sensor*> humidity_sensors_;

@@ -183,6 +183,14 @@ void AcuRite::loop() {
   }
 }
 
+void AcuRite::zero_rain_sensors()
+{
+  // clear rain totals, called from yaml
+  for (auto const& s : rain_sensors_) {
+    s.second->publish_state(0.0);
+  }
+}
+
 void AcuRite::setup() {
   ESP_LOGD(TAG, "AcuRite Setup");
 
