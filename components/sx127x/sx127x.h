@@ -6,7 +6,7 @@
 namespace esphome {
 namespace sx127x {
 
-enum SX127XRxBw : uint8_t {
+enum SX127xRxBw : uint8_t {
   RX_BANDWIDTH_2_6 = 0x17,
   RX_BANDWIDTH_3_1 = 0x0F,
   RX_BANDWIDTH_3_9 = 0x07,
@@ -30,12 +30,12 @@ enum SX127XRxBw : uint8_t {
   RX_BANDWIDTH_250_0 = 0x01
 };
 
-enum SX127XMod : uint8_t {
+enum SX127xMod : uint8_t {
   MODULATION_FSK = 0x00,
   MODULATION_OOK = 0x20
 };
 
-class SX127X : public Component,
+class SX127x : public Component,
                public spi::SPIDevice<spi::BIT_ORDER_MSB_FIRST, 
                                      spi::CLOCK_POLARITY_LOW, 
                                      spi::CLOCK_PHASE_LEADING,
@@ -48,8 +48,8 @@ class SX127X : public Component,
   void set_rst_pin(InternalGPIOPin *rst) { this->rst_ = rst; }
   void set_nss_pin(InternalGPIOPin *nss) { this->nss_ = nss; }
   void set_frequency(uint32_t frequency) { this->frequency_ = frequency; }
-  void set_rx_modulation(SX127XMod modulation) { this->modulation_ = modulation; }
-  void set_rx_bandwidth(SX127XRxBw bandwidth) { this->bandwidth_ = bandwidth; }
+  void set_rx_modulation(SX127xMod modulation) { this->modulation_ = modulation; }
+  void set_rx_bandwidth(SX127xRxBw bandwidth) { this->bandwidth_ = bandwidth; }
 
  protected:
   void write_register_(uint8_t address, uint8_t value);
@@ -57,8 +57,8 @@ class SX127X : public Component,
   uint8_t read_register_(uint8_t address);
   InternalGPIOPin *rst_{nullptr};
   InternalGPIOPin *nss_{nullptr};
-  SX127XRxBw bandwidth_; 
-  SX127XMod modulation_;
+  SX127xRxBw bandwidth_; 
+  SX127xMod modulation_;
   uint32_t frequency_;
 };
 

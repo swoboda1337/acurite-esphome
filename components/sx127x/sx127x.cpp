@@ -29,17 +29,17 @@ const uint8_t OOK_TRESHOLD_PEAK = 0x08;
 
 static const char *const TAG = "sx127x";
 
-uint8_t SX127X::read_register_(uint8_t reg)
+uint8_t SX127x::read_register_(uint8_t reg)
 {
   return single_transfer_((uint8_t)reg & 0x7f, 0x00);
 }
 
-void SX127X::write_register_(uint8_t reg, uint8_t value)
+void SX127x::write_register_(uint8_t reg, uint8_t value)
 {
   single_transfer_((uint8_t)reg | 0x80, value);
 }
 
-uint8_t SX127X::single_transfer_(uint8_t address, uint8_t value)
+uint8_t SX127x::single_transfer_(uint8_t address, uint8_t value)
 {
   uint8_t response;
   delegate_->begin_transaction();
@@ -51,8 +51,8 @@ uint8_t SX127X::single_transfer_(uint8_t address, uint8_t value)
   return response;
 }
 
-void SX127X::setup() {
-  ESP_LOGD(TAG, "SX127X setup");
+void SX127x::setup() {
+  ESP_LOGD(TAG, "SX127x setup");
 
   // setup nss and set high
   nss_->setup();
@@ -105,20 +105,20 @@ void SX127X::setup() {
   write_register_(REG_OP_MODE, modulation_ | MODE_LF_ON | MODE_RX);
 }
 
-void SX127X::dump_config() {
+void SX127x::dump_config() {
   uint32_t rx_bw_mant = 16 + (this->bandwidth_ >> 3) * 4;
   uint32_t rx_bw_exp = this->bandwidth_ & 0x7;
   float rx_bw = (float)32000000 / (rx_bw_mant * (2 << (rx_bw_exp + 2))) * 2;
-  ESP_LOGCONFIG(TAG, "SX127X:");
+  ESP_LOGCONFIG(TAG, "SX127x:");
   ESP_LOGCONFIG(TAG, "  Frequency: %f MHz", (float)this->frequency_ / 1000000);
   ESP_LOGCONFIG(TAG, "  Bandwidth: %.1f kHz", (float)rx_bw / 1000);
   ESP_LOGCONFIG(TAG, "  Modulation: %s", this->modulation_ == MODULATION_FSK ? "FSK" : "OOK");
   if (this->is_failed()) {
-    ESP_LOGE(TAG, "Configuring SX127X failed");
+    ESP_LOGE(TAG, "Configuring SX127x failed");
   }
 }
 
-float SX127X::get_setup_priority() const { return setup_priority::DATA; }
+float SX127x::get_setup_priority() const { return setup_priority::DATA; }
 
 }  // namespace sx127x
 }  // namespace esphome

@@ -15,9 +15,9 @@ CONF_MODULATION = "modulation"
 CONF_BANDWIDTH = "bandwidth"
 
 sx127x_ns = cg.esphome_ns.namespace("sx127x")
-SX127X = sx127x_ns.class_("SX127X", cg.Component, spi.SPIDevice)
-Modulation = sx127x_ns.enum("SX127XMod")
-Bandwidth = sx127x_ns.enum("SX127XRxBw")
+SX127x = sx127x_ns.class_("SX127x", cg.Component, spi.SPIDevice)
+Modulation = sx127x_ns.enum("SX127xMod")
+Bandwidth = sx127x_ns.enum("SX127xRxBw")
 
 MODULATION = {
     "FSK": Modulation.MODULATION_FSK,
@@ -51,7 +51,7 @@ BANDWIDTH = {
 CONFIG_SCHEMA = (
     cv.Schema(
         {
-            cv.GenerateID(): cv.declare_id(SX127X),
+            cv.GenerateID(): cv.declare_id(SX127x),
             cv.Required(CONF_RST_PIN): pins.internal_gpio_output_pin_schema,
             cv.Required(CONF_NSS_PIN): pins.internal_gpio_output_pin_schema,
             cv.Required(CONF_FREQUENCY): cv.int_range(min=137000000, max=1020000000),
