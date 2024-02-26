@@ -2,6 +2,8 @@ ESPHome SX127X driver + AcuRite OOK signal decoder. Allows for an easy intergrat
 
 The aucrite and the sx127x components are seporate. One provides data on a GPIO and the other uses that data. The acurite can be used with other radios and the sx127x component can be used with other sensors. 
 
+If you run the acurite component without sensors it will print ids of all devices it finds. 
+
 Example yaml to use in esphome device config:
 
     external_components:
