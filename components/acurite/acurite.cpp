@@ -51,120 +51,106 @@ void IRAM_ATTR OokStore::gpio_intr(OokStore *arg) {
 }
 
 bool AcuRite::decode_6002rm_(uint8_t *data, uint8_t len) {
-  static const char channel[4] = {'C', 'X', 'B', 'A'};
-  bool valid = true;
-  
-
-  if (len != 8 * 7) return false;
-  len = len / 8;  
-
-  // print data
-  if (len == 8) {
-    ESP_LOGD(TAG, "AcuRite data: %02x %02x %02x %02x %02x %02x %02x %02x", 
-             data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7]);
-  } else {
-    ESP_LOGD(TAG, "AcuRite data: %02x %02x %02x %02x %02x %02x %02x", 
-             data[0], data[1], data[2], data[3], data[4], data[5], data[6]);
+  // needs to be 7 bytes
+  if (len != 7 * 8) {
+    return false;
   }
   
-  // check checksum
+  // checksum
   uint8_t sum = 0;
-  for (int32_t i = 0; i < (len - 1); i++) {
+  for (int32_t i = 0; i <= 5; i++) {
     sum += data[i];
   }
-  if (sum != data[len - 1]) {
-    ESP_LOGD(TAG, "Checksum failure %02x vs %02x", sum, data[len - 1]);
-    valid = false;
+  if (sum != data[6]) {
+    ESP_LOGV(TAG, "Checksum failure %02x vs %02x", sum, data[len - 1]);
+    return false;
   }
 
-  // temperature sensor
-  if (len == 7) {
-    // check parity (bytes 1 to 5)
-    for (int32_t i = 1; i <= 5; i++) {
-      uint8_t parity = (data[i] >> 7) & 1;
-      uint8_t sum = 0;
-      for (int32_t b = 0; b <= 6; b++) {
-        sum ^= (data[i] >> b) & 1;
-      }
-      if (parity != sum) {
-        ESP_LOGD(TAG, "Parity failure on byte %d", i);
-        valid = false;
-      }
+  // parity (bytes 2 to 5)
+  for (int32_t i = 2; i <= 5; i++) {
+    uint8_t parity = (data[i] >> 7) & 1;
+    uint8_t sum = 0;
+    for (int32_t b = 0; b <= 6; b++) {
+      sum ^= (data[i] >> b) & 1;
     }
-
-    // device info
-    uint16_t id = ((data[0] & 0x3F) << 8) | (data[1] & 0xFF);
-    ESP_LOGD(TAG, "ID: %04x", id);
-    ESP_LOGD(TAG, "Channel: %c",  channel[data[0] >> 6]);
-    ESP_LOGD(TAG, "Signature: %02x", data[2] & 0x7F);
-      
-    // data
-    if (valid) {
-      float humidity = data[3] & 0x7F;
-      float temperature = ((data[4] & 0x0F) << 7) | (data[5] & 0x7F);
-      temperature = (temperature - 1000) / 10.0;
-      ESP_LOGD(TAG, "Got temperature=%.1f°C humidity=%.1f%%", temperature, humidity);
-      if (temperature_sensors_.count(id) > 0) {
-        temperature_sensors_[id]->publish_state(temperature);
-      }
-      if (humidity_sensors_.count(id) > 0) {
-        humidity_sensors_[id]->publish_state(humidity);
-      }
-      status_clear_warning();
+    if (parity != sum) {
+      ESP_LOGV(TAG, "Parity failure on byte %d", i);
+      return false;
     }
   }
-  return valid;
+
+  // decode data and update sensor
+  static const char channel_lut[4] = {'C', 'X', 'B', 'A'};
+  char channel = channel_lut[data[0] >> 6];
+  uint16_t id = ((data[0] & 0x3F) << 8) | (data[1] & 0xFF);
+  float humidity = data[3] & 0x7F;
+  float temperature = ((data[4] & 0x0F) << 7) | (data[5] & 0x7F);
+  temperature = (temperature - 1000) / 10.0;
+  ESP_LOGD(TAG, "Temp sensor: channel %c, id %04x, temperature %.1f°C, humidity %.1f%%", 
+           channel, id, temperature, humidity);
+  if (this->temperature_sensors_.count(id) > 0) {
+    this->temperature_sensors_[id]->publish_state(temperature);
+  }
+  if (this->humidity_sensors_.count(id) > 0) {
+    this->humidity_sensors_[id]->publish_state(humidity);
+  }
+  status_clear_warning();
+  return true;
 }
 
 bool AcuRite::decode_899_(uint8_t *data, uint8_t len) {
-  bool valid = true;
-  
-
-  if (len != 8 * 8) return false;
-  len = len / 8;  
-
-  // print data
-  if (len == 8) {
-    ESP_LOGD(TAG, "AcuRite data: %02x %02x %02x %02x %02x %02x %02x %02x", 
-             data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7]);
-  } else {
-    ESP_LOGD(TAG, "AcuRite data: %02x %02x %02x %02x %02x %02x %02x", 
-             data[0], data[1], data[2], data[3], data[4], data[5], data[6]);
+  // needs to be 8 bytes
+  if (len != 8 * 8) {
+    return false;
   }
   
-  // check checksum
+  // checksum
   uint8_t sum = 0;
-  for (int32_t i = 0; i < (len - 1); i++) {
+  for (int32_t i = 0; i <= 6; i++) {
     sum += data[i];
   }
-  if (sum != data[len - 1]) {
-    ESP_LOGD(TAG, "Checksum failure %02x vs %02x", sum, data[len - 1]);
-    valid = false;
+  if (sum != data[7]) {
+    ESP_LOGV(TAG, "Checksum failure %02x vs %02x", sum, data[len - 1]);
+    return false;
   }
 
-  if (len == 8 && valid) {
-    uint16_t id = ((data[0] & 0x3F) << 8) | (data[1] & 0xFF);
-    uint32_t counter = ((data[4] & 0x7F) << 14) | ((data[5] & 0x7F) << 7) | ((data[6] & 0x7F) << 0);
-    ESP_LOGD(TAG, "ID: %04x", id);
-    ESP_LOGD(TAG, "Counter: %d", counter);
-    if (rain_sensors_.count(id) > 0) {
-      // check for new devices or device reset
-      if (rain_counters_.count(id) == 0 || counter < rain_counters_[id]) {
-        rain_counters_[id] = counter;
-      }
-
-      // update daily count
-      float mm = (float)(counter - rain_counters_[id]) * 0.254;
-      if (rain_sensors_[id]->has_state()) {
-        mm += rain_sensors_[id]->get_raw_state();
-      }
-      rain_sensors_[id]->publish_state(mm);
-
-      // update counter
-      rain_counters_[id] = counter;
+  // parity (bytes 4 to 6)
+  for (int32_t i = 4; i <= 6; i++) {
+    uint8_t parity = (data[i] >> 7) & 1;
+    uint8_t sum = 0;
+    for (int32_t b = 0; b <= 6; b++) {
+      sum ^= (data[i] >> b) & 1;
+    }
+    if (parity != sum) {
+      ESP_LOGV(TAG, "Parity failure on byte %d", i);
+      return false;
     }
   }
-  return valid;
+
+  // decode data and update sensor
+  static const char channel_lut[4] = {'A', 'B', 'C', 'X'};
+  char channel = channel_lut[data[0] >> 6];
+  uint16_t id = ((data[0] & 0x3F) << 8) | (data[1] & 0xFF);
+  uint32_t counter = ((data[4] & 0x7F) << 14) | ((data[5] & 0x7F) << 7) | ((data[6] & 0x7F) << 0);
+  ESP_LOGD(TAG, "Rain gauge: channel %c, id %04x, counter %d", channel, id, counter);
+  if (this->rain_sensors_.count(id) > 0) {
+    // check for new devices or device reset
+    if (this->rain_counters_.count(id) == 0 || counter < this->rain_counters_[id]) {
+      this->rain_counters_[id] = counter;
+    }
+
+    // update daily count
+    float mm = (float)(counter - this->rain_counters_[id]) * 0.254;
+    if (this->rain_sensors_[id]->has_state()) {
+      mm += this->rain_sensors_[id]->get_raw_state();
+    }
+    this->rain_sensors_[id]->publish_state(mm);
+
+    // update counter
+    this->rain_counters_[id] = counter;
+  }
+  status_clear_warning();
+  return true;
 }
 
 void AcuRite::loop() {
@@ -200,6 +186,9 @@ void AcuRite::loop() {
         if (decode_899_(data, bits) || 
             decode_6002rm_(data, bits) || 
             bits >= sizeof(data) * 8) {
+          ESP_LOGVV(TAG, "AcuRite data: %02x%02x%02x%02x%02x%02x%02x%02x", 
+                    data[0], data[1], data[2], data[3], 
+                    data[4], data[5], data[6], data[7]);
           bits = 0;
           syncs = 0;
         }
