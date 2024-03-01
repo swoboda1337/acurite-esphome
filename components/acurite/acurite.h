@@ -11,12 +11,12 @@ struct OokStore {
   static void gpio_intr(OokStore *arg);
   volatile uint32_t *buffer{nullptr};
   volatile uint32_t write{0};
-  uint32_t read{0};
-  uint32_t last{0};
-  bool filtered{false};
-  bool overflow{false};
+  volatile uint32_t read{0};
+  volatile uint32_t prev{0};
+  volatile bool filtered{false};
+  volatile bool overflow{false};
   uint32_t size{8192};
-  uint8_t filter{100};
+  uint8_t filter{50};
   ISRInternalGPIOPin pin;
 };
 
@@ -24,8 +24,7 @@ class AcuRite : public Component {
  public:
   void setup() override;
   void loop() override;
-
-  float get_setup_priority() const override { return setup_priority::HARDWARE; }
+  float get_setup_priority() const override;
 
   void add_temperature_sensor(sensor::Sensor *temperature_sensor, uint16_t id) { temperature_sensors_[id] = temperature_sensor; }
   void add_humidity_sensor(sensor::Sensor *humidity_sensor, uint16_t id) { humidity_sensors_[id] = humidity_sensor; }

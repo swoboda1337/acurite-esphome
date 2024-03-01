@@ -118,7 +118,7 @@ void SX127x::dump_config() {
   }
 }
 
-float SX127x::get_setup_priority() const { return setup_priority::DATA; }
+float SX127x::get_setup_priority() const { return setup_priority::HARDWARE; }
 
 }  // namespace sx127x
 }  // namespace esphome

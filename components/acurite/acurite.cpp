@@ -14,12 +14,12 @@ static const int32_t ACURITE_ONE   = 400;
 static const int32_t ACURITE_ZERO  = 200;
 static const int32_t ACURITE_DELTA = 100;
 
-void IRAM_ATTR OokStore::gpio_intr(OokStore *arg) {
-  const uint32_t now = micros();
-  const uint32_t next = (arg->write + 1) & (arg->size - 1);
-  const uint32_t delta = now - arg->last;
-  const uint32_t level = arg->pin.digital_read() ?  1 : 0;
-  arg->last = now;
+void IRAM_ATTR HOT OokStore::gpio_intr(OokStore *arg) {
+  uint32_t now = micros();
+  uint32_t next = (arg->write + 1) & (arg->size - 1);
+  uint32_t delta = now - arg->prev;
+  uint32_t level = arg->pin.digital_read() ?  1 : 0;
+  arg->prev = now;
 
   // check for overflow 
   if (next == arg->read) {
@@ -62,7 +62,7 @@ bool AcuRite::decode_6002rm_(uint8_t *data, uint8_t len) {
     sum += data[i];
   }
   if (sum != data[6]) {
-    ESP_LOGV(TAG, "Checksum failure %02x vs %02x", sum, data[len - 1]);
+    ESP_LOGV(TAG, "Checksum failure %02x vs %02x", sum, data[6]);
     return false;
   }
 
@@ -110,7 +110,7 @@ bool AcuRite::decode_899_(uint8_t *data, uint8_t len) {
     sum += data[i];
   }
   if (sum != data[7]) {
-    ESP_LOGV(TAG, "Checksum failure %02x vs %02x", sum, data[len - 1]);
+    ESP_LOGV(TAG, "Checksum failure %02x vs %02x", sum, data[7]);
     return false;
   }
 
@@ -165,7 +165,14 @@ void AcuRite::loop() {
     bool isSync = std::abs(ACURITE_SYNC - delta) < ACURITE_DELTA;
     bool isZero = std::abs(ACURITE_ZERO - delta) < ACURITE_DELTA;
     bool isOne = std::abs(ACURITE_ONE - delta) < ACURITE_DELTA;
+
+    // update read index, prev micros and warn about overflow 
     prev = micros;
+    this->store_.read = (this->store_.read + 1) & (this->store_.size - 1);
+    if (this->store_.overflow) {
+      ESP_LOGW(TAG, "Buffer overflow");
+      this->store_.overflow = false;
+    }
 
     // validate signal state, only look for two syncs
     // as the first one can be affected by noise until
@@ -182,7 +189,8 @@ void AcuRite::loop() {
         }
         bits += 1;
 
-        // try to decode and reset if needed
+        // try to decode and reset if needed, return after each
+        // successful decode to avoid blocking too long 
         if (decode_899_(data, bits) || 
             decode_6002rm_(data, bits) || 
             bits >= sizeof(data) * 8) {
@@ -191,6 +199,7 @@ void AcuRite::loop() {
                     data[4], data[5], data[6], data[7]);
           bits = 0;
           syncs = 0;
+          return;
         }
       }
     } else if (isSync && bits == 0) {
@@ -202,13 +211,6 @@ void AcuRite::loop() {
       // reset if state is invalid
       bits = 0;
       syncs = 0;
-    }
-
-    // update read pointer and warn about overflow 
-    this->store_.read = (this->store_.read + 1) & (this->store_.size - 1);
-    if (this->store_.overflow) {
-      ESP_LOGW(TAG, "Buffer overflow");
-      this->store_.overflow = false;
     }
   }
 }
@@ -227,7 +229,7 @@ void AcuRite::setup() {
 
   // init isr store
   this->store_.buffer = new uint32_t[store_.size];
-  memset((uint8_t*)this->store_.buffer, 0, sizeof(this->store_.buffer));
+  memset((uint8_t*)this->store_.buffer, 0, this->store_.size * sizeof(uint32_t));
 
   // the gpio is connected to the output of the ook demodulator, 
   // when the signal state is on the gpio will go high and when
@@ -237,6 +239,8 @@ void AcuRite::setup() {
   this->store_.pin = pin_->to_isr();
   this->pin_->attach_interrupt(OokStore::gpio_intr, &this->store_, gpio::INTERRUPT_ANY_EDGE);
 }
+
+float AcuRite::get_setup_priority() const { return setup_priority::LATE; }
 
 }  // namespace acurite
 }  // namespace esphome
