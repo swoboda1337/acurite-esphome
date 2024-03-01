@@ -7,22 +7,16 @@
 namespace esphome {
 namespace acurite {
 
-enum AcuRiteState {
-  ACURITE_INIT,
-  ACURITE_SYNC_ON,
-  ACURITE_SYNC_OFF,
-  ACURITE_BIT_ON,
-  ACURITE_BIT_OFF,
-  ACURITE_DONE
-};
-
-struct AcuRiteStore {
-  static void gpio_intr(AcuRiteStore *arg);
-  volatile AcuRiteState state;
-  volatile uint32_t bits;
-  volatile uint32_t syncs;
-  volatile uint32_t prev;
-  volatile uint8_t data[8];
+struct OokStore {
+  static void gpio_intr(OokStore *arg);
+  volatile uint32_t *buffer{nullptr};
+  volatile uint32_t write{0};
+  uint32_t read{0};
+  uint32_t last{0};
+  bool filtered{false};
+  bool overflow{false};
+  uint32_t size{8192};
+  uint8_t filter{100};
   ISRInternalGPIOPin pin;
 };
 
@@ -37,7 +31,6 @@ class AcuRite : public Component {
   void add_humidity_sensor(sensor::Sensor *humidity_sensor, uint16_t id) { humidity_sensors_[id] = humidity_sensor; }
   void add_rain_sensor(sensor::Sensor *rain_sensor, uint16_t id) { rain_sensors_[id] = rain_sensor; }
   void set_pin(InternalGPIOPin *pin) { this->pin_ = pin; }
-
   void zero_rain_totals();
 
  protected:
@@ -46,7 +39,9 @@ class AcuRite : public Component {
   std::map<uint16_t, sensor::Sensor*> rain_sensors_;
   std::map<uint16_t, uint32_t> rain_counters_;
   InternalGPIOPin *pin_{nullptr};
-  AcuRiteStore store;
+  bool decode_6002rm_(uint8_t *data, uint8_t len);
+  bool decode_899_(uint8_t *data, uint8_t len);
+  OokStore store_;
 };
 
 }  // namespace acurite
