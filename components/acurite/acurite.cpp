@@ -155,19 +155,15 @@ bool AcuRite::decode_899_(uint8_t *data, uint8_t len) {
 
 void AcuRite::loop() {
   while (this->store_.read != this->store_.write) {
-    static uint32_t bits{0};
-    static uint32_t syncs{0};
-    static uint32_t prev{0};
-    static uint8_t data[8];
     uint8_t level = this->store_.read & 1;
     uint32_t micros = this->store_.buffer[this->store_.read];
-    int32_t delta = micros - prev;
+    int32_t delta = micros - this->prev_;
     bool isSync = std::abs(ACURITE_SYNC - delta) < ACURITE_DELTA;
     bool isZero = std::abs(ACURITE_ZERO - delta) < ACURITE_DELTA;
     bool isOne = std::abs(ACURITE_ONE - delta) < ACURITE_DELTA;
 
     // update read index, prev micros and warn about overflow 
-    prev = micros;
+    this->prev_ = micros;
     this->store_.read = (this->store_.read + 1) & (this->store_.size - 1);
     if (this->store_.overflow) {
       ESP_LOGW(TAG, "Buffer overflow");
@@ -177,40 +173,40 @@ void AcuRite::loop() {
     // validate signal state, only look for two syncs
     // as the first one can be affected by noise until
     // the agc adjusts
-    if ((isOne || isZero) && syncs > 2) {
+    if ((isOne || isZero) && this->syncs_ > 2) {
       // detect bit after on is complete
       if (level == 0) {
-        uint8_t idx = bits / 8;
-        uint8_t bit = 1 << (7 - (bits & 7));
+        uint8_t idx = this->bits_ / 8;
+        uint8_t bit = 1 << (7 - (this->bits_ & 7));
         if (isOne) {
-          data[idx] |=  bit;
+          this->data_[idx] |=  bit;
         } else {
-          data[idx] &= ~bit;
+          this->data_[idx] &= ~bit;
         }
-        bits += 1;
+        this->bits_ += 1;
 
         // try to decode and reset if needed, return after each
         // successful decode to avoid blocking too long 
-        if (decode_899_(data, bits) || 
-            decode_6002rm_(data, bits) || 
-            bits >= sizeof(data) * 8) {
+        if (decode_899_(this->data_, this->bits_) || 
+            decode_6002rm_(this->data_, this->bits_) || 
+            this->bits_ >= sizeof(this->data_) * 8) {
           ESP_LOGVV(TAG, "AcuRite data: %02x%02x%02x%02x%02x%02x%02x%02x", 
-                    data[0], data[1], data[2], data[3], 
-                    data[4], data[5], data[6], data[7]);
-          bits = 0;
-          syncs = 0;
+                    this->data_[0], this->data_[1], this->data_[2], this->data_[3], 
+                    this->data_[4], this->data_[5], this->data_[6], this->data_[7]);
+          this->bits_ = 0;
+          this->syncs_ = 0;
           return;
         }
       }
-    } else if (isSync && bits == 0) {
+    } else if (isSync && this->bits_ == 0) {
       // count sync after off is complete
       if (level == 1) {
-        syncs++;
+        this->syncs_++;
       }
     } else {
       // reset if state is invalid
-      bits = 0;
-      syncs = 0;
+      this->bits_ = 0;
+      this->syncs_ = 0;
     }
   }
 }

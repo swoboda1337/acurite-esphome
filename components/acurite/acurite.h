@@ -34,14 +34,18 @@ class AcuRite : public Component {
   void reset_rain_totals();
 
  protected:
+  bool decode_6002rm_(uint8_t *data, uint8_t len);
+  bool decode_899_(uint8_t *data, uint8_t len);
   std::map<uint16_t, sensor::Sensor*> temperature_sensors_;
   std::map<uint16_t, sensor::Sensor*> humidity_sensors_;
   std::map<uint16_t, sensor::Sensor*> rain_sensors_;
   std::map<uint16_t, uint32_t> rain_counters_;
   InternalGPIOPin *pin_{nullptr};
-  bool decode_6002rm_(uint8_t *data, uint8_t len);
-  bool decode_899_(uint8_t *data, uint8_t len);
   OokStore store_;
+  uint32_t bits_{0};
+  uint32_t syncs_{0};
+  uint32_t prev_{0};
+  uint8_t data_[8];
 };
 
 template<typename... Ts> class AcuRiteResetRainAction : public Action<Ts...> {
