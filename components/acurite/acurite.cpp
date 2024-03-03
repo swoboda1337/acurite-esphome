@@ -215,7 +215,7 @@ void AcuRite::loop() {
   }
 }
 
-void AcuRite::zero_rain_totals()
+void AcuRite::reset_rain_totals()
 {
   // clear rain totals, called from yaml
   for (auto const& s : this->rain_sensors_) {

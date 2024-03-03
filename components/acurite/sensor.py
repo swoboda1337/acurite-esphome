@@ -1,6 +1,8 @@
 import esphome.codegen as cg
 import esphome.config_validation as cv
 from esphome import pins
+from esphome import automation
+from esphome.automation import maybe_simple_id
 from esphome.components import sensor
 from esphome.const import (
     CONF_ID,
@@ -22,6 +24,7 @@ CONF_PIN = 'pin'
 
 acurite_ns = cg.esphome_ns.namespace("acurite")
 AcuRite = acurite_ns.class_("AcuRite", cg.Component)
+AcuRiteResetRainAction = acurite_ns.class_("AcuRiteResetRainAction", automation.Action)
 
 DEVICE_SCHEMA = cv.Schema(
     {
@@ -57,6 +60,20 @@ CONFIG_SCHEMA = (
     )
 )
 
+CALIBRATION_ACTION_SCHEMA = maybe_simple_id(
+    {
+        cv.Required(CONF_ID): cv.use_id(AcuRite),
+    }
+)
+
+@automation.register_action(
+    "acurite.reset_rain", AcuRiteResetRainAction, CALIBRATION_ACTION_SCHEMA
+)
+
+async def acurite_reset_rain_to_code(config, action_id, template_arg, args):
+    parent = await cg.get_variable(config[CONF_ID])
+    return cg.new_Pvariable(action_id, template_arg, parent)
+
 async def to_code(config):
     var = cg.new_Pvariable(config[CONF_ID])
     await cg.register_component(var, config)
@@ -73,4 +90,3 @@ async def to_code(config):
         if CONF_RAIN in device_conf:
             sens = await sensor.new_sensor(device_conf[CONF_RAIN])
             cg.add(var.add_rain_sensor(sens, device_conf[CONF_DEVICE_ID]))
-

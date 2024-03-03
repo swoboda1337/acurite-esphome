@@ -1,6 +1,7 @@
 #pragma once
 
 #include "esphome/core/component.h"
+#include "esphome/core/automation.h"
 #include "esphome/components/sensor/sensor.h"
 #include "esphome/components/sx127x/sx127x.h"
 
@@ -30,7 +31,7 @@ class AcuRite : public Component {
   void add_humidity_sensor(sensor::Sensor *humidity_sensor, uint16_t id) { humidity_sensors_[id] = humidity_sensor; }
   void add_rain_sensor(sensor::Sensor *rain_sensor, uint16_t id) { rain_sensors_[id] = rain_sensor; }
   void set_pin(InternalGPIOPin *pin) { this->pin_ = pin; }
-  void zero_rain_totals();
+  void reset_rain_totals();
 
  protected:
   std::map<uint16_t, sensor::Sensor*> temperature_sensors_;
@@ -41,6 +42,16 @@ class AcuRite : public Component {
   bool decode_6002rm_(uint8_t *data, uint8_t len);
   bool decode_899_(uint8_t *data, uint8_t len);
   OokStore store_;
+};
+
+template<typename... Ts> class AcuRiteResetRainAction : public Action<Ts...> {
+ public:
+  AcuRiteResetRainAction(AcuRite *acurite) : acurite_(acurite) {}
+
+  void play(Ts... x) override { this->acurite_->reset_rain_totals(); }
+
+ protected:
+  AcuRite *acurite_;
 };
 
 }  // namespace acurite
