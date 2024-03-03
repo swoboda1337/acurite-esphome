@@ -2,7 +2,7 @@ ESPHome SX127X driver + AcuRite OOK signal decoder. Allows for an easy intergrat
 
 The aucrite and the sx127x components are seporate. One provides data on a GPIO and the other uses that data. The acurite can be used with other radios and the sx127x component can be used with other sensors. 
 
-If you run the acurite component without sensors it will print ids of all devices it finds. 
+If you run the acurite component without sensors it will print ids of all devices it finds. Rain sensor needs to be reset everyday or week, example yaml resets it at midnight.
 
 Example yaml to use in esphome device config:
     
@@ -11,7 +11,7 @@ Example yaml to use in esphome device config:
           type: git
           url: https://github.com/swoboda1337/acurite-esphome
           ref: main
-        refresh: 0d
+        refresh: 1d
     
     time:
       - platform: homeassistant
@@ -20,9 +20,7 @@ Example yaml to use in esphome device config:
             minutes: 0
             hours: 0
             then:
-              # zero rain totals at midnight
-              lambda: |-
-                id(acurite_sensor).zero_rain_totals();
+              acurite.reset_rain: acurite_id
     
     spi:
       clk_pin: GPIO5
@@ -38,20 +36,36 @@ Example yaml to use in esphome device config:
     
     sensor:
       - platform: acurite
-        id: acurite_sensor
+        id: acurite_id
         pin: GPIO32
         devices:
           - device_id: 0x1d2e
             temperature:
               name: "AcuRite Temperature 1"
+              filters:
+                - throttle: 8s
+                - delta: 0.01
             humidity:
               name: "AcuRite Humidity 1"
+              filters:
+                - throttle: 8s
+                - delta: 0.01
           - device_id: 0x1fd2
             temperature:
               name: "AcuRite Temperature 2"
+              filters:
+                - throttle: 8s
+                - delta: 0.01
             humidity:
               name: "AcuRite Humidity 2"
+              filters:
+                - throttle: 8s
+                - delta: 0.01
           - device_id: 0x2838
             rain:
               name: "AcuRite Rain"
+              filters:
+                - throttle: 30s
+                - delta: 0.01
+
 
