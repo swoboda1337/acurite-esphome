@@ -1,6 +1,6 @@
 ESPHome SX127X driver + AcuRite OOK signal decoder. Allows for an easy intergration of AcuRite sensors into Home Assistant. Tested with the LILYGO LoRa32 V2.1_1.6 board.
 
-The aucrite and the sx127x components are seporate. One provides data on a GPIO and the other uses that data. The acurite can be used with other radios and the sx127x component can be used with other sensors. 
+The aucrite and the sx127x components are separate. One provides data on a GPIO and the other uses that data. The acurite can be used with other radios and the sx127x component can be used with other sensors. 
 
 If you run the acurite component without sensors it will print ids of all devices it finds. Rain sensor needs to be reset everyday or week, example yaml resets it at midnight.
 
