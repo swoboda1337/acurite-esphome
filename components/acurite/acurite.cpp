@@ -27,7 +27,7 @@ void IRAM_ATTR HOT OokStore::gpio_intr(OokStore *arg) {
     return;
   }
 
-  // ingore if less than filter length and mark the last 
+  // ignore if less than filter length and mark the last 
   // entry to be overwritten as it should be filtered too
   if (delta < arg->filter) {
     arg->filtered = true;
@@ -53,7 +53,7 @@ void IRAM_ATTR HOT OokStore::gpio_intr(OokStore *arg) {
 void TemperatureSensor::new_value(float value)
 {
   // if the new value changed significantly wait for it to be confirmed a 
-  // second time incase it was corrupted by random bit flips
+  // second time in case it was corrupted by random bit flips
   if (fabsf(value - this->value_last_) < 1.0 && fabsf(value - this->value_published_) > 0.01) {
     this->sensor_->publish_state(value);
     this->value_published_ = value;
@@ -64,7 +64,7 @@ void TemperatureSensor::new_value(float value)
 void HumiditySensor::new_value(float value)
 {
   // if the new value changed significantly wait for it to be confirmed a 
-  // second time incase it was corrupted by random bit flips
+  // second time in case it was corrupted by random bit flips
   if (fabsf(value - this->value_last_) < 2.0 && fabsf(value - this->value_published_) > 0.01) {
     this->sensor_->publish_state(value);
     this->value_published_ = value;
@@ -75,7 +75,7 @@ void HumiditySensor::new_value(float value)
 void RainSensor::new_value(uint32_t count)
 {
   // if the new value changed significantly wait for it to be confirmed a 
-  // second time incase it was corrupted by random bit flips
+  // second time in case it was corrupted by random bit flips
   if (count >= this->count_last_ && (count - this->count_last_) < 16) {
      // check for device reset or first receive 
     if (count < this->count_device_) {
