@@ -21,25 +21,61 @@ struct OokStore {
   ISRInternalGPIOPin pin;
 };
 
+class TemperatureSensor {
+ public:
+  TemperatureSensor(sensor::Sensor *sensor): sensor_(sensor) {}
+  void new_value(float value);
+
+ protected:
+  sensor::Sensor *sensor_;
+  float value_published_{1000};
+  float value_last_{1000};
+};
+
+class HumiditySensor {
+ public:
+  HumiditySensor(sensor::Sensor *sensor): sensor_(sensor) {}
+  void new_value(float value);
+
+ protected:
+  sensor::Sensor *sensor_;
+  float value_published_{1000};
+  float value_last_{1000};
+};
+
+class RainSensor {
+public:
+  RainSensor(sensor::Sensor *sensor): sensor_(sensor) {}
+  void new_value(uint32_t count);
+  void reset_period();
+
+ protected:
+  sensor::Sensor *sensor_;
+  uint32_t count_device_{0xFFFFFFFF};
+  uint32_t count_published_{0xFFFFFFFF};
+  uint32_t count_last_{0xFFFFFFFF};
+  uint32_t count_period_{0};
+};
+
+
 class AcuRite : public Component { 
  public:
   void setup() override;
   void loop() override;
   float get_setup_priority() const override;
 
-  void add_temperature_sensor(sensor::Sensor *temperature_sensor, uint16_t id) { temperature_sensors_[id] = temperature_sensor; }
-  void add_humidity_sensor(sensor::Sensor *humidity_sensor, uint16_t id) { humidity_sensors_[id] = humidity_sensor; }
-  void add_rain_sensor(sensor::Sensor *rain_sensor, uint16_t id) { rain_sensors_[id] = rain_sensor; }
+  void add_temperature_sensor(sensor::Sensor *sensor, uint16_t id) { temperature_sensors_[id] = new TemperatureSensor(sensor); }
+  void add_humidity_sensor(sensor::Sensor *sensor, uint16_t id) { humidity_sensors_[id] = new HumiditySensor(sensor); }
+  void add_rain_sensor(sensor::Sensor *sensor, uint16_t id) { rain_sensors_[id] = new RainSensor(sensor); }
   void set_pin(InternalGPIOPin *pin) { this->pin_ = pin; }
   void reset_rain_totals();
 
  protected:
   bool decode_6002rm_(uint8_t *data, uint8_t len);
   bool decode_899_(uint8_t *data, uint8_t len);
-  std::map<uint16_t, sensor::Sensor*> temperature_sensors_;
-  std::map<uint16_t, sensor::Sensor*> humidity_sensors_;
-  std::map<uint16_t, sensor::Sensor*> rain_sensors_;
-  std::map<uint16_t, uint32_t> rain_counters_;
+  std::map<uint16_t, TemperatureSensor*> temperature_sensors_;
+  std::map<uint16_t, HumiditySensor*> humidity_sensors_;
+  std::map<uint16_t, RainSensor*> rain_sensors_;
   InternalGPIOPin *pin_{nullptr};
   OokStore store_;
   uint32_t bits_{0};

@@ -42,30 +42,13 @@ Example yaml to use in esphome device config:
           - device_id: 0x1d2e
             temperature:
               name: "AcuRite Temperature 1"
-              filters:
-                - throttle: 8s
-                - delta: 0.01
             humidity:
               name: "AcuRite Humidity 1"
-              filters:
-                - throttle: 8s
-                - delta: 0.01
           - device_id: 0x1fd2
             temperature:
               name: "AcuRite Temperature 2"
-              filters:
-                - throttle: 8s
-                - delta: 0.01
             humidity:
               name: "AcuRite Humidity 2"
-              filters:
-                - throttle: 8s
-                - delta: 0.01
           - device_id: 0x2838
             rain:
               name: "AcuRite Rain"
-              filters:
-                - throttle: 30s
-                - delta: 0.01
-
-

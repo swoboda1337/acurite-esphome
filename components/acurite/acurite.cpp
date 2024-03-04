@@ -50,6 +50,56 @@ void IRAM_ATTR HOT OokStore::gpio_intr(OokStore *arg) {
   }
 }
 
+void TemperatureSensor::new_value(float value)
+{
+  // if the new value changed significantly wait for it to be confirmed a 
+  // second time incase it was corrupted by random bit flips
+  if (fabsf(value - this->value_last_) < 1.0 && fabsf(value - this->value_published_) > 0.01) {
+    this->sensor_->publish_state(value);
+    this->value_published_ = value;
+  }
+  this->value_last_ = value;
+}
+
+void HumiditySensor::new_value(float value)
+{
+  // if the new value changed significantly wait for it to be confirmed a 
+  // second time incase it was corrupted by random bit flips
+  if (fabsf(value - this->value_last_) < 2.0 && fabsf(value - this->value_published_) > 0.01) {
+    this->sensor_->publish_state(value);
+    this->value_published_ = value;
+  }
+  this->value_last_ = value;
+}
+
+void RainSensor::new_value(uint32_t count)
+{
+  // if the new value changed significantly wait for it to be confirmed a 
+  // second time incase it was corrupted by random bit flips
+  if (count >= this->count_last_ && (count - this->count_last_) < 16) {
+     // check for device reset or first receive 
+    if (count < this->count_device_) {
+      this->count_device_ = count;
+    }
+
+    // update daily count and sensor
+    this->count_period_ += count - this->count_device_;
+    if (this->count_period_ != this->count_published_) {
+      this->sensor_->publish_state(this->count_period_ * 0.254);
+      this->count_published_ = this->count_period_;
+    } 
+  }
+  this->count_last_ = count;
+}
+
+void RainSensor::reset_period()
+{
+  // reset period count and publish
+  this->sensor_->publish_state(0.0);
+  this->count_published_ = 0;
+  this->count_period_ = 0;
+}
+
 bool AcuRite::decode_6002rm_(uint8_t *data, uint8_t len) {
   // needs to be 7 bytes
   if (len != 7 * 8) {
@@ -89,12 +139,11 @@ bool AcuRite::decode_6002rm_(uint8_t *data, uint8_t len) {
   ESP_LOGD(TAG, "Temp sensor: channel %c, id %04x, temperature %.1f°C, humidity %.1f%%", 
            channel, id, temperature, humidity);
   if (this->temperature_sensors_.count(id) > 0) {
-    this->temperature_sensors_[id]->publish_state(temperature);
+    this->temperature_sensors_[id]->new_value(temperature);
   }
   if (this->humidity_sensors_.count(id) > 0) {
-    this->humidity_sensors_[id]->publish_state(humidity);
+    this->humidity_sensors_[id]->new_value(humidity);
   }
-  status_clear_warning();
   return true;
 }
 
@@ -131,25 +180,11 @@ bool AcuRite::decode_899_(uint8_t *data, uint8_t len) {
   static const char channel_lut[4] = {'A', 'B', 'C', 'X'};
   char channel = channel_lut[data[0] >> 6];
   uint16_t id = ((data[0] & 0x3F) << 8) | (data[1] & 0xFF);
-  uint32_t counter = ((data[4] & 0x7F) << 14) | ((data[5] & 0x7F) << 7) | ((data[6] & 0x7F) << 0);
-  ESP_LOGD(TAG, "Rain gauge: channel %c, id %04x, counter %d", channel, id, counter);
+  uint32_t count = ((data[4] & 0x7F) << 14) | ((data[5] & 0x7F) << 7) | ((data[6] & 0x7F) << 0);
+  ESP_LOGD(TAG, "Rain gauge: channel %c, id %04x, count %d", channel, id, count);
   if (this->rain_sensors_.count(id) > 0) {
-    // check for new devices or device reset
-    if (this->rain_counters_.count(id) == 0 || counter < this->rain_counters_[id]) {
-      this->rain_counters_[id] = counter;
-    }
-
-    // update daily count
-    float mm = (float)(counter - this->rain_counters_[id]) * 0.254;
-    if (this->rain_sensors_[id]->has_state()) {
-      mm += this->rain_sensors_[id]->get_raw_state();
-    }
-    this->rain_sensors_[id]->publish_state(mm);
-
-    // update counter
-    this->rain_counters_[id] = counter;
+    this->rain_sensors_[id]->new_value(count);
   }
-  status_clear_warning();
   return true;
 }
 
@@ -214,8 +249,8 @@ void AcuRite::loop() {
 void AcuRite::reset_rain_totals()
 {
   // clear rain totals, called from yaml
-  for (auto const& s : this->rain_sensors_) {
-    s.second->publish_state(0.0);
+  for (auto const& item : this->rain_sensors_) {
+    item.second->reset_period();
   }
   ESP_LOGI(TAG, "Rain totals have been set to zero");
 }
