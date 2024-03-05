@@ -294,7 +294,9 @@ void AcuRite::setup() {
   this->pin_->attach_interrupt(OokStore::gpio_intr, &this->store_, gpio::INTERRUPT_ANY_EDGE);
 }
 
-float AcuRite::get_setup_priority() const { return setup_priority::LATE; }
+float AcuRite::get_setup_priority() const { 
+  return setup_priority::LATE; 
+}
 
 }  // namespace acurite
 }  // namespace esphome
