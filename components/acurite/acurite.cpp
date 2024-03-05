@@ -53,8 +53,7 @@ void IRAM_ATTR HOT OokStore::gpio_intr(OokStore *arg) {
   }
 }
 
-void TemperatureSensor::new_value(float value)
-{
+void TemperatureSensor::new_value(float value) {
   // if the new value changed significantly wait for it to be confirmed a 
   // second time in case it was corrupted by random bit flips
   if (fabsf(value - this->value_last_) < 1.0 && fabsf(value - this->value_published_) > 0.01) {
@@ -64,8 +63,12 @@ void TemperatureSensor::new_value(float value)
   this->value_last_ = value;
 }
 
-void HumiditySensor::new_value(float value)
-{
+void TemperatureSensor::mark_unknown() { 
+  sensor_->publish_state(NAN);
+  this->value_published_ = 1000;
+}
+
+void HumiditySensor::new_value(float value) {
   // if the new value changed significantly wait for it to be confirmed a 
   // second time in case it was corrupted by random bit flips
   if (fabsf(value - this->value_last_) < 2.0 && fabsf(value - this->value_published_) > 0.01) {
@@ -75,8 +78,12 @@ void HumiditySensor::new_value(float value)
   this->value_last_ = value;
 }
 
-void RainSensor::new_value(uint32_t count)
-{
+void HumiditySensor::mark_unknown() { 
+  sensor_->publish_state(NAN);
+  this->value_published_ = 1000;
+}
+
+void RainSensor::new_value(uint32_t count) {
   // if the new value changed significantly wait for it to be confirmed a 
   // second time in case it was corrupted by random bit flips
   if (count >= this->count_last_ && (count - this->count_last_) < 16) {
@@ -87,6 +94,7 @@ void RainSensor::new_value(uint32_t count)
 
     // update daily count and sensor
     this->count_period_ += count - this->count_device_;
+    this->count_device_ = count;
     if (this->count_period_ != this->count_published_) {
       this->sensor_->publish_state(this->count_period_ * 0.254);
       this->count_published_ = this->count_period_;
@@ -95,8 +103,12 @@ void RainSensor::new_value(uint32_t count)
   this->count_last_ = count;
 }
 
-void RainSensor::reset_period()
-{
+void RainSensor::mark_unknown() { 
+  sensor_->publish_state(NAN);
+  this->count_published_ = 0xFFFFFFFF;
+}
+
+void RainSensor::reset_period() {
   // reset period count and publish
   this->sensor_->publish_state(0.0);
   this->count_published_ = 0;
