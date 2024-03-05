@@ -23,7 +23,8 @@ struct OokStore {
 
 class TemperatureSensor {
  public:
-  TemperatureSensor(sensor::Sensor *sensor): sensor_(sensor) {}
+  TemperatureSensor(sensor::Sensor *sensor): sensor_(sensor) { }
+  void mark_unknown() { sensor_->publish_state(NAN); }
   void new_value(float value);
 
  protected:
@@ -34,7 +35,8 @@ class TemperatureSensor {
 
 class HumiditySensor {
  public:
-  HumiditySensor(sensor::Sensor *sensor): sensor_(sensor) {}
+  HumiditySensor(sensor::Sensor *sensor): sensor_(sensor) { }
+  void mark_unknown() { sensor_->publish_state(NAN); }
   void new_value(float value);
 
  protected:
@@ -45,7 +47,8 @@ class HumiditySensor {
 
 class RainSensor {
 public:
-  RainSensor(sensor::Sensor *sensor): sensor_(sensor) {}
+  RainSensor(sensor::Sensor *sensor): sensor_(sensor) { }
+  void mark_unknown() { sensor_->publish_state(NAN); }
   void new_value(uint32_t count);
   void reset_period();
 

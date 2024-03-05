@@ -8,6 +8,9 @@ namespace acurite {
 
 static const char *const TAG = "acurite";
 
+// time before a sensor value is declared unknown
+static const int32_t SENSOR_TIMEOUT = 5 * 60 * 1000;
+
 // acurite ook params
 static const int32_t ACURITE_SYNC  = 600;
 static const int32_t ACURITE_ONE   = 400;
@@ -140,9 +143,15 @@ bool AcuRite::decode_6002rm_(uint8_t *data, uint8_t len) {
            channel, id, temperature, humidity);
   if (this->temperature_sensors_.count(id) > 0) {
     this->temperature_sensors_[id]->new_value(temperature);
+    set_timeout(std::to_string((uint32_t)this->temperature_sensors_[id]), SENSOR_TIMEOUT, [this, id]() {
+      this->temperature_sensors_[id]->mark_unknown();
+    });
   }
   if (this->humidity_sensors_.count(id) > 0) {
     this->humidity_sensors_[id]->new_value(humidity);
+    set_timeout(std::to_string((uint32_t)this->humidity_sensors_[id]), SENSOR_TIMEOUT, [this, id]() {
+      this->humidity_sensors_[id]->mark_unknown();
+    });
   }
   return true;
 }
@@ -184,6 +193,9 @@ bool AcuRite::decode_899_(uint8_t *data, uint8_t len) {
   ESP_LOGD(TAG, "Rain gauge: channel %c, id %04x, count %d", channel, id, count);
   if (this->rain_sensors_.count(id) > 0) {
     this->rain_sensors_[id]->new_value(count);
+    set_timeout(std::to_string((uint32_t)this->rain_sensors_[id]), SENSOR_TIMEOUT, [this, id]() {
+      this->rain_sensors_[id]->mark_unknown();
+    });
   }
   return true;
 }
