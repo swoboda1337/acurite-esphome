@@ -60,7 +60,6 @@ public:
   uint32_t count_period_{0};
 };
 
-
 class AcuRite : public Component { 
  public:
   void setup() override;
