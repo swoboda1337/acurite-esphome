@@ -70,7 +70,7 @@ class AcuRite : public Component {
   void add_humidity_sensor(sensor::Sensor *sensor, uint16_t id) { humidity_sensors_[id] = new HumiditySensor(sensor); }
   void add_rain_sensor(sensor::Sensor *sensor, uint16_t id) { rain_sensors_[id] = new RainSensor(sensor); }
   void set_pin(InternalGPIOPin *pin) { this->pin_ = pin; }
-  void reset_rain_totals();
+  void reset_rainfall();
 
  protected:
   bool decode_6002rm_(uint8_t *data, uint8_t len);
@@ -86,11 +86,11 @@ class AcuRite : public Component {
   uint8_t data_[8];
 };
 
-template<typename... Ts> class AcuRiteResetRainAction : public Action<Ts...> {
+template<typename... Ts> class AcuRiteResetRainfallAction : public Action<Ts...> {
  public:
-  AcuRiteResetRainAction(AcuRite *acurite) : acurite_(acurite) {}
+  AcuRiteResetRainfallAction(AcuRite *acurite) : acurite_(acurite) {}
 
-  void play(Ts... x) override { this->acurite_->reset_rain_totals(); }
+  void play(Ts... x) override { this->acurite_->reset_rainfall(); }
 
  protected:
   AcuRite *acurite_;

@@ -24,7 +24,7 @@ CONF_PIN = 'pin'
 
 acurite_ns = cg.esphome_ns.namespace("acurite")
 AcuRite = acurite_ns.class_("AcuRite", cg.Component)
-AcuRiteResetRainAction = acurite_ns.class_("AcuRiteResetRainAction", automation.Action)
+AcuRiteResetRainfallAction = acurite_ns.class_("AcuRiteResetRainfallAction", automation.Action)
 
 DEVICE_SCHEMA = cv.Schema(
     {
@@ -67,7 +67,7 @@ CALIBRATION_ACTION_SCHEMA = maybe_simple_id(
 )
 
 @automation.register_action(
-    "acurite.reset_rain", AcuRiteResetRainAction, CALIBRATION_ACTION_SCHEMA
+    "acurite.reset_rainfall", AcuRiteResetRainfallAction, CALIBRATION_ACTION_SCHEMA
 )
 
 async def acurite_reset_rain_to_code(config, action_id, template_arg, args):
