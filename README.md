@@ -20,7 +20,7 @@ Example yaml to use in esphome device config:
             minutes: 0
             hours: 0
             then:
-              acurite.reset_rain: acurite_id
+              acurite.reset_rainfall: acurite_id
     
     spi:
       clk_pin: GPIO5
