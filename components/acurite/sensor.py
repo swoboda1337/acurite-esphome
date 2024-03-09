@@ -55,7 +55,7 @@ CONFIG_SCHEMA = (
         {
             cv.GenerateID(): cv.declare_id(AcuRite),
             cv.Required(CONF_PIN): pins.internal_gpio_input_pin_schema,
-            cv.Required(CONF_DEVICES): cv.ensure_list(DEVICE_SCHEMA),
+            cv.Optional(CONF_DEVICES): cv.ensure_list(DEVICE_SCHEMA),
         }
     )
 )
@@ -80,13 +80,14 @@ async def to_code(config):
     if pin_cfg := config.get(CONF_PIN):
         pin = await cg.gpio_pin_expression(pin_cfg)
         cg.add(var.set_pin(pin))
-    for device_conf in config[CONF_DEVICES]:
-        if CONF_TEMPERATURE in device_conf:
-            sens = await sensor.new_sensor(device_conf[CONF_TEMPERATURE])
-            cg.add(var.add_temperature_sensor(sens, device_conf[CONF_DEVICE_ID]))
-        if CONF_HUMIDITY in device_conf:
-            sens = await sensor.new_sensor(device_conf[CONF_HUMIDITY])
-            cg.add(var.add_humidity_sensor(sens, device_conf[CONF_DEVICE_ID]))
-        if CONF_RAIN in device_conf:
-            sens = await sensor.new_sensor(device_conf[CONF_RAIN])
-            cg.add(var.add_rain_sensor(sens, device_conf[CONF_DEVICE_ID]))
+    if devices_cfg := config.get(CONF_DEVICES):
+        for device_cfg in devices_cfg:
+            if CONF_TEMPERATURE in device_cfg:
+                sens = await sensor.new_sensor(device_cfg[CONF_TEMPERATURE])
+                cg.add(var.add_temperature_sensor(sens, device_cfg[CONF_DEVICE_ID]))
+            if CONF_HUMIDITY in device_cfg:
+                sens = await sensor.new_sensor(device_cfg[CONF_HUMIDITY])
+                cg.add(var.add_humidity_sensor(sens, device_cfg[CONF_DEVICE_ID]))
+            if CONF_RAIN in device_cfg:
+                sens = await sensor.new_sensor(device_cfg[CONF_RAIN])
+                cg.add(var.add_rain_sensor(sens, device_cfg[CONF_DEVICE_ID]))
