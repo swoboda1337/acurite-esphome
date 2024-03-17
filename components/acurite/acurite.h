@@ -1,9 +1,11 @@
 #pragma once
 
+#include <map>
+
+#include "esphome/core/gpio.h"
 #include "esphome/core/component.h"
-#include "esphome/core/automation.h"
 #include "esphome/components/sensor/sensor.h"
-#include "esphome/components/sx127x/sx127x.h"
+#include "esphome/components/time/real_time_clock.h"
 
 namespace esphome {
 namespace acurite {
@@ -21,43 +23,39 @@ struct OokStore {
   ISRInternalGPIOPin pin;
 };
 
-class TemperatureSensor {
+class AcuRiteDevice {
  public:
-  TemperatureSensor(sensor::Sensor *sensor): sensor_(sensor) { }
-  void new_value(float value);
+  void add_temperature_sensor(sensor::Sensor *sensor) { temperature_sensor_ = sensor; }
+  void add_humidity_sensor(sensor::Sensor *sensor) { humidity_sensor_ = sensor; }
+  void add_rainfall_sensor_1hr(sensor::Sensor *sensor) { rainfall_sensor_1hr_ = sensor; }
+  void add_rainfall_sensor_24hr(sensor::Sensor *sensor) { rainfall_sensor_24hr_ = sensor; }
+  void add_rainfall_sensor_daily(sensor::Sensor *sensor) { rainfall_sensor_daily_ = sensor; }
+  void temperature_value(float value);
+  void humidity_value(float value);
+  void rainfall_count(uint32_t count, ESPTime now);
+  void reset_daily();
   void mark_unknown();
 
  protected:
-  sensor::Sensor *sensor_;
-  float value_published_{1000};
-  float value_last_{1000};
-};
+  sensor::Sensor *temperature_sensor_{nullptr};
+  float temperature_published_{1000};
+  float temperature_last_{1000};
 
-class HumiditySensor {
- public:
-  HumiditySensor(sensor::Sensor *sensor): sensor_(sensor) { }
-  void new_value(float value);
-  void mark_unknown();
+  sensor::Sensor *humidity_sensor_{nullptr};
+  float humidity_published_{1000};
+  float humidity_last_{1000};
 
- protected:
-  sensor::Sensor *sensor_;
-  float value_published_{1000};
-  float value_last_{1000};
-};
-
-class RainSensor {
-public:
-  RainSensor(sensor::Sensor *sensor): sensor_(sensor) { }
-  void new_value(uint32_t count);
-  void mark_unknown();
-  void reset_period();
-
- protected:
-  sensor::Sensor *sensor_;
-  uint32_t count_device_{0xFFFFFFFF};
-  uint32_t count_published_{0xFFFFFFFF};
-  uint32_t count_last_{0xFFFFFFFF};
-  uint32_t count_period_{0};
+  sensor::Sensor *rainfall_sensor_daily_{nullptr};
+  sensor::Sensor *rainfall_sensor_24hr_{nullptr};
+  sensor::Sensor *rainfall_sensor_1hr_{nullptr};
+  uint32_t rainfall_published_daily_{0xFFFFFFFF};
+  uint32_t rainfall_published_24hr_{0xFFFFFFFF};
+  uint32_t rainfall_published_1hr_{0xFFFFFFFF};
+  uint32_t rainfall_count_device_{0xFFFFFFFF};
+  uint32_t rainfall_count_last_{0xFFFFFFFF};
+  uint32_t rainfall_count_daily_{0};
+  uint16_t rainfall_count_buffer_[24 * 60]{0};
+  ESPTime rainfall_count_time_{0};
 };
 
 class AcuRite : public Component { 
@@ -66,34 +64,27 @@ class AcuRite : public Component {
   void loop() override;
   float get_setup_priority() const override;
 
-  void add_temperature_sensor(sensor::Sensor *sensor, uint16_t id) { temperature_sensors_[id] = new TemperatureSensor(sensor); }
-  void add_humidity_sensor(sensor::Sensor *sensor, uint16_t id) { humidity_sensors_[id] = new HumiditySensor(sensor); }
-  void add_rain_sensor(sensor::Sensor *sensor, uint16_t id) { rain_sensors_[id] = new RainSensor(sensor); }
+  void add_device(uint16_t id) { devices_[id] = new AcuRiteDevice(); }
+  void add_temperature_sensor(uint16_t id, sensor::Sensor *sensor) { devices_[id]->add_temperature_sensor(sensor); }
+  void add_humidity_sensor(uint16_t id, sensor::Sensor *sensor) { devices_[id]->add_humidity_sensor(sensor); }
+  void add_rainfall_sensor_1hr(uint16_t id, sensor::Sensor *sensor) { devices_[id]->add_rainfall_sensor_1hr(sensor); }
+  void add_rainfall_sensor_24hr(uint16_t id, sensor::Sensor *sensor) { devices_[id]->add_rainfall_sensor_24hr(sensor); }
+  void add_rainfall_sensor_daily(uint16_t id, sensor::Sensor *sensor) { devices_[id]->add_rainfall_sensor_daily(sensor); }
+  void set_srctime(time::RealTimeClock *srctime) { this->srctime_ = srctime; }
   void set_pin(InternalGPIOPin *pin) { this->pin_ = pin; }
-  void reset_rainfall();
 
  protected:
   bool decode_6002rm_(uint8_t *data, uint8_t len);
   bool decode_899_(uint8_t *data, uint8_t len);
-  std::map<uint16_t, TemperatureSensor*> temperature_sensors_;
-  std::map<uint16_t, HumiditySensor*> humidity_sensors_;
-  std::map<uint16_t, RainSensor*> rain_sensors_;
+  bool midnight_{false};
+  time::RealTimeClock *srctime_{nullptr};
+  std::map<uint16_t, AcuRiteDevice*> devices_;
   InternalGPIOPin *pin_{nullptr};
   OokStore store_;
   uint32_t bits_{0};
   uint32_t syncs_{0};
   uint32_t prev_{0};
   uint8_t data_[8];
-};
-
-template<typename... Ts> class AcuRiteResetRainfallAction : public Action<Ts...> {
- public:
-  AcuRiteResetRainfallAction(AcuRite *acurite) : acurite_(acurite) {}
-
-  void play(Ts... x) override { this->acurite_->reset_rainfall(); }
-
- protected:
-  AcuRite *acurite_;
 };
 
 }  // namespace acurite

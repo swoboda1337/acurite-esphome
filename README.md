@@ -15,12 +15,6 @@ Example yaml to use in esphome device config:
     
     time:
       - platform: homeassistant
-        on_time:
-          - seconds: 0
-            minutes: 0
-            hours: 0
-            then:
-              acurite.reset_rain: acurite_id
     
     spi:
       clk_pin: GPIO5
@@ -36,7 +30,6 @@ Example yaml to use in esphome device config:
     
     sensor:
       - platform: acurite
-        id: acurite_id
         pin: GPIO32
         devices:
           - device_id: 0x1d2e
@@ -50,5 +43,10 @@ Example yaml to use in esphome device config:
             humidity:
               name: "AcuRite Humidity 2"
           - device_id: 0x2838
-            rain:
-              name: "AcuRite Rain"
+            rain_1hr:
+              name: "AcuRite Rainfall 1Hr"
+            rain_24hr:
+              name: "AcuRite Rainfall 24Hr"
+            rain_daily:
+              name: "AcuRite Rainfall Daily"
+
