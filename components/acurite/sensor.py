@@ -18,7 +18,7 @@ from esphome.const import (
 )
 
 CONF_DEVICES = 'devices'
-CONF_DEVICE_ID = 'device_id'
+CONF_DEVICE = 'device'
 CONF_RAIN_1HR = 'rain_1hr'
 CONF_RAIN_24HR = 'rain_24hr'
 CONF_RAIN_DAILY = 'rain_daily'
@@ -32,7 +32,7 @@ AcuRite = acurite_ns.class_("AcuRite", cg.Component)
 
 DEVICE_SCHEMA = cv.Schema(
     {
-        cv.Optional(CONF_DEVICE_ID): cv.hex_int_range(max=0x3FFF),
+        cv.Optional(CONF_DEVICE): cv.hex_int_range(max=0x3FFF),
         cv.Optional(CONF_TEMPERATURE): sensor.sensor_schema(
             unit_of_measurement=UNIT_CELSIUS,
             accuracy_decimals=1,
@@ -87,19 +87,19 @@ async def to_code(config):
         cg.add(var.set_pin(pin))
     if devices_cfg := config.get(CONF_DEVICES):
         for device_cfg in devices_cfg:
-            cg.add(var.add_device(device_cfg[CONF_DEVICE_ID]))
+            cg.add(var.add_device(device_cfg[CONF_DEVICE]))
             if CONF_TEMPERATURE in device_cfg:
                 sens = await sensor.new_sensor(device_cfg[CONF_TEMPERATURE])
-                cg.add(var.add_temperature_sensor(device_cfg[CONF_DEVICE_ID], sens))
+                cg.add(var.add_temperature_sensor(device_cfg[CONF_DEVICE], sens))
             if CONF_HUMIDITY in device_cfg:
                 sens = await sensor.new_sensor(device_cfg[CONF_HUMIDITY])
-                cg.add(var.add_humidity_sensor(device_cfg[CONF_DEVICE_ID], sens))
+                cg.add(var.add_humidity_sensor(device_cfg[CONF_DEVICE], sens))
             if CONF_RAIN_1HR in device_cfg:
                 sens = await sensor.new_sensor(device_cfg[CONF_RAIN_1HR])
-                cg.add(var.add_rainfall_sensor_1hr(device_cfg[CONF_DEVICE_ID], sens))
+                cg.add(var.add_rainfall_sensor_1hr(device_cfg[CONF_DEVICE], sens))
             if CONF_RAIN_24HR in device_cfg:
                 sens = await sensor.new_sensor(device_cfg[CONF_RAIN_24HR])
-                cg.add(var.add_rainfall_sensor_24hr(device_cfg[CONF_DEVICE_ID], sens))
+                cg.add(var.add_rainfall_sensor_24hr(device_cfg[CONF_DEVICE], sens))
             if CONF_RAIN_DAILY in device_cfg:
                 sens = await sensor.new_sensor(device_cfg[CONF_RAIN_DAILY])
-                cg.add(var.add_rainfall_sensor_daily(device_cfg[CONF_DEVICE_ID], sens))
+                cg.add(var.add_rainfall_sensor_daily(device_cfg[CONF_DEVICE], sens))

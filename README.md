@@ -32,17 +32,17 @@ Example yaml to use in esphome device config:
       - platform: acurite
         pin: GPIO32
         devices:
-          - device_id: 0x1d2e
+          - device: 0x1d2e
             temperature:
               name: "AcuRite Temperature 1"
             humidity:
               name: "AcuRite Humidity 1"
-          - device_id: 0x1fd2
+          - device: 0x1fd2
             temperature:
               name: "AcuRite Temperature 2"
             humidity:
               name: "AcuRite Humidity 2"
-          - device_id: 0x2838
+          - device: 0x2838
             rain_1hr:
               name: "AcuRite Rainfall 1Hr"
             rain_24hr:
