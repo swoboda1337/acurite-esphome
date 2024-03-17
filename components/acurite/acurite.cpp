@@ -96,7 +96,7 @@ void AcuRiteDevice::rainfall_count(uint32_t count, ESPTime now) {
 
     // zero expired data, update time and increment counts
     if (now.is_valid() && now > this->rainfall_count_time_) {
-      while (minute != now.minute && hour != now.hour) {
+      while (minute != now.minute || hour != now.hour) {
         minute += 1;
         if (minute >= 60) {
           minute = 0;
