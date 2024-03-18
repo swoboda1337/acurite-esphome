@@ -1,10 +1,10 @@
-ESPHome SX127x driver + AcuRite OOK signal decoder. Allows for an easy intergration of AcuRite sensors into Home Assistant. Tested with the LILYGO LoRa32 V2.1_1.6 board.
+ESPHome SX127x driver + AcuRite OOK signal decoder. Allows for an easy integration of AcuRite sensors into Home Assistant. Tested with the LILYGO LoRa32 V2.1_1.6 board.
 
-The AucRite and the SX127x components are separate. One provides data on a GPIO and the other uses that data. The acurite can be used with other radios and the SX127x component can be used with other sensors. 
+The AcuRite and the SX127x components are separate. One provides data on a GPIO and the other uses that data. The AcuRite component can be used with other radios and the SX127x component can be used with other sensors. 
 
-AucRite can be run without any sensors configured. Data from all sensors will still be logged, this can be done to determine ids before setting up sensors.
+The AcuRite component can be run without any sensors configured. Data received from all sensors will still be logged, this can be done to determine ids before setting up the sensor yaml.
 
-Binary rain sensor is true if there was any rain in the last 15 minutes (at least one rain sensor is required for this).
+Binary rain sensor is true if there was any rain in the last 15 minutes (at least one rain sensor needs to be configured for this to work).
 
 Example yaml to use in esphome device config:
     
