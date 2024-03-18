@@ -11,6 +11,9 @@ static const char *const TAG = "acurite";
 // time before a sensor value is declared unknown
 static const int32_t SENSOR_TIMEOUT = 5 * 60 * 1000;
 
+// time before rainfall sensor is marked as dry
+static const int32_t RAINFALL_TIMEOUT = 15 * 60 * 1000;
+
 // acurite ook params
 static const int32_t ACURITE_SYNC  = 600;
 static const int32_t ACURITE_ONE   = 400;
@@ -53,6 +56,7 @@ void IRAM_ATTR HOT OokStore::gpio_intr(OokStore *arg) {
   }
 }
 
+#ifdef USE_SENSOR
 void AcuRiteDevice::temperature_value(float value) {
   if (this->temperature_sensor_) {
     // if the new value changed significantly wait for it to be confirmed a 
@@ -79,13 +83,14 @@ void AcuRiteDevice::humidity_value(float value) {
   }
 }
 
-void AcuRiteDevice::rainfall_count(uint32_t count, ESPTime now) {
+bool AcuRiteDevice::rainfall_count(uint32_t count, ESPTime now) {
+  uint32_t delta = 0;
+
   // if the new value changed significantly wait for it to be confirmed a 
   // second time in case it was corrupted by random bit flips
   if ((count - this->rainfall_count_last_) < 16) {
     uint8_t hour = this->rainfall_count_time_.hour;
     uint8_t minute = this->rainfall_count_time_.minute;
-    uint32_t delta = 0;
 
     // check for device reset and calculate delta
     if (count < this->rainfall_count_device_) {
@@ -144,7 +149,10 @@ void AcuRiteDevice::rainfall_count(uint32_t count, ESPTime now) {
       }
     }
   }
+
   this->rainfall_count_last_ = count;
+
+  return delta > 0;
 }
 
 void AcuRiteDevice::mark_unknown() { 
@@ -179,6 +187,7 @@ void AcuRiteDevice::reset_daily() {
     this->rainfall_count_daily_ = 0;
   }
 }
+#endif
 
 bool AcuRite::decode_6002rm_(uint8_t *data, uint8_t len) {
   // needs to be 7 bytes
@@ -218,13 +227,15 @@ bool AcuRite::decode_6002rm_(uint8_t *data, uint8_t len) {
   temperature = (temperature - 1000) / 10.0;
   ESP_LOGD(TAG, "Temp sensor: channel %c, id %04x, temperature %.1f°C, humidity %.1f%%", 
            channel, id, temperature, humidity);
+#ifdef USE_SENSOR
   if (this->devices_.count(id) > 0) {
     this->devices_[id]->temperature_value(temperature);
     this->devices_[id]->humidity_value(humidity);
-    set_timeout(std::to_string(id), SENSOR_TIMEOUT, [this, id]() {
+    set_timeout("AcuRite::" + std::to_string(id), SENSOR_TIMEOUT, [this, id]() {
       this->devices_[id]->mark_unknown();
     });
   }
+#endif
   return true;
 }
 
@@ -263,22 +274,36 @@ bool AcuRite::decode_899_(uint8_t *data, uint8_t len) {
   uint16_t id = ((data[0] & 0x3F) << 8) | (data[1] & 0xFF);
   uint32_t count = ((data[4] & 0x7F) << 14) | ((data[5] & 0x7F) << 7) | ((data[6] & 0x7F) << 0);
   ESP_LOGD(TAG, "Rain gauge: channel %c, id %04x, count %d", channel, id, count);
+#ifdef USE_SENSOR
   if (this->devices_.count(id) > 0) {
     ESPTime now = this->srctime_->utcnow();
     if (now.is_valid()) {
-      this->devices_[id]->rainfall_count(count, now);
-      set_timeout(std::to_string(id), SENSOR_TIMEOUT, [this, id]() {
+      // use UTC time here to avoid any DST changes
+      bool raining = this->devices_[id]->rainfall_count(count, now);
+      set_timeout("AcuRite::" + std::to_string(id), SENSOR_TIMEOUT, [this, id]() {
         this->devices_[id]->mark_unknown();
       });
+
+#ifdef USE_BINARY_SENSOR
+      // if raining mark sensor as wet and schedule timeout to mark as dry
+      if (raining && this->rainfall_sensor_) {
+        this->rainfall_sensor_->publish_state(true);
+        set_timeout("AcuRite::rainfall_timeout", RAINFALL_TIMEOUT, [this]() {
+          this->rainfall_sensor_->publish_state(false);
+        });
+      }
+#endif
     } else {
-      ESP_LOGD(TAG, "Waiting for system time to be synchronized");
+      ESP_LOGW(TAG, "Waiting for system time to be synchronized");
       this->devices_[id]->mark_unknown();
     }
   }
+#endif
   return true;
 }
 
 void AcuRite::loop() {
+#ifdef USE_SENSOR
   // check for midnight to reset daily rainfall
   ESPTime now = this->srctime_->now();
   if (now.is_valid()) {
@@ -294,6 +319,7 @@ void AcuRite::loop() {
       this->midnight_ = false;
     }
   }
+#endif
 
   // process gpio data
   while (this->store_.read != this->store_.write) {
@@ -355,6 +381,11 @@ void AcuRite::loop() {
 
 void AcuRite::setup() {
   ESP_LOGI(TAG, "AcuRite Setup");
+
+#ifdef USE_BINARY_SENSOR
+  // init rainfall binary sensor
+  this->rainfall_sensor_->publish_state(false);
+#endif
 
   // init isr store
   this->store_.buffer = new uint32_t[store_.size];
