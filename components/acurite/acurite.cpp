@@ -277,7 +277,11 @@ bool AcuRite::decode_899_(uint8_t *data, uint8_t len) {
 #ifdef USE_SENSOR
   if (this->devices_.count(id) > 0) {
     ESPTime now = this->srctime_->utcnow();
-    if (now.is_valid()) {
+    if (!now.is_valid()) {
+      // if time is not synchronized daily rain count won't make sense
+      ESP_LOGW(TAG, "Waiting for system time to be synchronized");
+      this->devices_[id]->mark_unknown();
+    } else {
       // use UTC time here to avoid any DST changes
       bool raining = this->devices_[id]->rainfall_count(count, now);
       set_timeout("AcuRite::" + std::to_string(id), SENSOR_TIMEOUT, [this, id]() {
@@ -293,9 +297,6 @@ bool AcuRite::decode_899_(uint8_t *data, uint8_t len) {
         });
       }
 #endif
-    } else {
-      ESP_LOGW(TAG, "Waiting for system time to be synchronized");
-      this->devices_[id]->mark_unknown();
     }
   }
 #endif
