@@ -40,7 +40,6 @@ Example yaml to use in esphome device config:
 
     sensor:
       - platform: acurite
-        pin: GPIO32
         devices:
           - device: 0x1d2e
             temperature:
