@@ -5,6 +5,7 @@
 #include "esphome/core/gpio.h"
 #include "esphome/core/component.h"
 #include "esphome/components/time/real_time_clock.h"
+#include "esphome/components/remote_receiver/remote_receiver.h"
 
 #ifdef USE_SENSOR
 #include "esphome/components/sensor/sensor.h"
@@ -67,8 +68,10 @@ class AcuRiteDevice {
 };
 #endif
 
-class AcuRite : public Component { 
+class AcuRite : public Component, public remote_base::RemoteReceiverListener { 
  public:
+  bool on_receive(remote_base::RemoteReceiveData data);
+
   void setup() override;
   void loop() override;
   float get_setup_priority() const override;
@@ -85,6 +88,7 @@ class AcuRite : public Component {
   void set_rainfall_sensor(binary_sensor::BinarySensor *sensor) { rainfall_sensor_ = sensor; }
 #endif
   void set_srctime(time::RealTimeClock *srctime) { this->srctime_ = srctime; }
+  void set_srcrecv(remote_receiver::RemoteReceiverComponent *srcrecv) { this->remote_receiver_ = srcrecv; }
   void set_pin(InternalGPIOPin *pin) { this->pin_ = pin; }
 
  protected:
@@ -98,6 +102,7 @@ class AcuRite : public Component {
   binary_sensor::BinarySensor *rainfall_sensor_{nullptr};
 #endif
   time::RealTimeClock *srctime_{nullptr};
+  remote_receiver::RemoteReceiverComponent *remote_receiver_{nullptr};
   InternalGPIOPin *pin_{nullptr};
   OokStore store_;
   uint32_t bits_{0};

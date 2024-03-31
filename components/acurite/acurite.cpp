@@ -303,6 +303,12 @@ bool AcuRite::decode_899_(uint8_t *data, uint8_t len) {
   return true;
 }
 
+bool AcuRite::on_receive(remote_base::RemoteReceiveData data)
+{
+   ESP_LOGI(TAG, "on_receive %d", data.size());
+   return true;
+}
+
 void AcuRite::loop() {
 #ifdef USE_SENSOR
   // check for midnight to reset daily rainfall
@@ -384,21 +390,28 @@ void AcuRite::setup() {
   ESP_LOGI(TAG, "AcuRite Setup");
 
 #ifdef USE_BINARY_SENSOR
-  // init rainfall binary sensor
-  this->rainfall_sensor_->publish_state(false);
+  if (this->rainfall_sensor_) {
+    // init rainfall binary sensor
+    this->rainfall_sensor_->publish_state(false);
+  }
 #endif
 
-  // init isr store
-  this->store_.buffer = new uint32_t[store_.size];
-  memset((uint8_t*)this->store_.buffer, 0, this->store_.size * sizeof(uint32_t));
+  // listen for data
+  if (this->remote_receiver_) {
+    this->remote_receiver_->register_listener(this);
+  } else {
+    // init isr store
+    this->store_.buffer = new uint32_t[store_.size];
+    memset((uint8_t*)this->store_.buffer, 0, this->store_.size * sizeof(uint32_t));
 
-  // the gpio is connected to the output of the ook demodulator, 
-  // when the signal state is on the gpio will go high and when
-  // it is off the gpio will go low, trigger on both edges in 
-  // order to detect on duration  
-  this->pin_->setup();
-  this->store_.pin = pin_->to_isr();
-  this->pin_->attach_interrupt(OokStore::gpio_intr, &this->store_, gpio::INTERRUPT_ANY_EDGE);
+    // the gpio is connected to the output of the ook demodulator, 
+    // when the signal state is on the gpio will go high and when
+    // it is off the gpio will go low, trigger on both edges in 
+    // order to detect on duration  
+    this->pin_->setup();
+    this->store_.pin = pin_->to_isr();
+    this->pin_->attach_interrupt(OokStore::gpio_intr, &this->store_, gpio::INTERRUPT_ANY_EDGE);
+  }
 }
 
 float AcuRite::get_setup_priority() const { 
