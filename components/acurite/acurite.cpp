@@ -305,8 +305,61 @@ bool AcuRite::decode_899_(uint8_t *data, uint8_t len) {
 
 bool AcuRite::on_receive(remote_base::RemoteReceiveData data)
 {
-   ESP_LOGI(TAG, "on_receive %d", data.size());
-   return true;
+  ESP_LOGI(TAG, "on_receive %d", data.size());
+  for(auto i : data.get_raw_data()) {
+    process_ook_(i >= 0 ? 1 : 0, std::abs(i));
+  }
+  return true;
+}
+
+void AcuRite::process_ook_(uint8_t level, int32_t delta)
+{
+  bool isSync = std::abs(ACURITE_SYNC - delta) < ACURITE_DELTA;
+  bool isZero = std::abs(ACURITE_ZERO - delta) < ACURITE_DELTA;
+  bool isOne = std::abs(ACURITE_ONE - delta) < ACURITE_DELTA;
+
+  // validate signal state, only look for two syncs
+  // as the first one can be affected by noise until
+  // the agc adjusts
+  if ((isOne || isZero) && this->syncs_ > 2) {
+    // detect bit after on is complete
+    if (level == 0) {
+      uint8_t idx = this->bits_ / 8;
+      uint8_t bit = 1 << (7 - (this->bits_ & 7));
+      if (isOne) {
+        this->data_[idx] |=  bit;
+      } else {
+        this->data_[idx] &= ~bit;
+      }
+      this->bits_ += 1;
+
+      if (this->bits_ == 1) {
+        ESP_LOGD(TAG, "Found sync");
+      }
+
+      // try to decode and reset if needed, return after each
+      // successful decode to avoid blocking too long 
+      if (decode_899_(this->data_, this->bits_) || 
+          decode_6002rm_(this->data_, this->bits_) || 
+          this->bits_ >= sizeof(this->data_) * 8) {
+        ESP_LOGD(TAG, "AcuRite data: %02x%02x%02x%02x%02x%02x%02x%02x", 
+                  this->data_[0], this->data_[1], this->data_[2], this->data_[3], 
+                  this->data_[4], this->data_[5], this->data_[6], this->data_[7]);
+        this->bits_ = 0;
+        this->syncs_ = 0;
+        return;
+      }
+    }
+  } else if (isSync && this->bits_ == 0) {
+    // count sync after off is complete
+    if (level == 1) {
+      this->syncs_++;
+    }
+  } else {
+    // reset if state is invalid
+    this->bits_ = 0;
+    this->syncs_ = 0;
+  }
 }
 
 void AcuRite::loop() {
@@ -328,14 +381,10 @@ void AcuRite::loop() {
   }
 #endif
 
-  // process gpio data
   while (this->store_.read != this->store_.write) {
     uint8_t level = this->store_.read & 1;
     uint32_t micros = this->store_.buffer[this->store_.read];
     int32_t delta = micros - this->prev_;
-    bool isSync = std::abs(ACURITE_SYNC - delta) < ACURITE_DELTA;
-    bool isZero = std::abs(ACURITE_ZERO - delta) < ACURITE_DELTA;
-    bool isOne = std::abs(ACURITE_ONE - delta) < ACURITE_DELTA;
 
     // update read index, prev micros and warn about overflow 
     this->prev_ = micros;
@@ -345,44 +394,8 @@ void AcuRite::loop() {
       this->store_.overflow = false;
     }
 
-    // validate signal state, only look for two syncs
-    // as the first one can be affected by noise until
-    // the agc adjusts
-    if ((isOne || isZero) && this->syncs_ > 2) {
-      // detect bit after on is complete
-      if (level == 0) {
-        uint8_t idx = this->bits_ / 8;
-        uint8_t bit = 1 << (7 - (this->bits_ & 7));
-        if (isOne) {
-          this->data_[idx] |=  bit;
-        } else {
-          this->data_[idx] &= ~bit;
-        }
-        this->bits_ += 1;
-
-        // try to decode and reset if needed, return after each
-        // successful decode to avoid blocking too long 
-        if (decode_899_(this->data_, this->bits_) || 
-            decode_6002rm_(this->data_, this->bits_) || 
-            this->bits_ >= sizeof(this->data_) * 8) {
-          ESP_LOGVV(TAG, "AcuRite data: %02x%02x%02x%02x%02x%02x%02x%02x", 
-                    this->data_[0], this->data_[1], this->data_[2], this->data_[3], 
-                    this->data_[4], this->data_[5], this->data_[6], this->data_[7]);
-          this->bits_ = 0;
-          this->syncs_ = 0;
-          return;
-        }
-      }
-    } else if (isSync && this->bits_ == 0) {
-      // count sync after off is complete
-      if (level == 1) {
-        this->syncs_++;
-      }
-    } else {
-      // reset if state is invalid
-      this->bits_ = 0;
-      this->syncs_ = 0;
-    }
+    // process gpio data
+    process_ook_(level, delta);
   }
 }
 

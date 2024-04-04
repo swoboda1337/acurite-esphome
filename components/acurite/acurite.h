@@ -92,6 +92,7 @@ class AcuRite : public Component, public remote_base::RemoteReceiverListener {
   void set_pin(InternalGPIOPin *pin) { this->pin_ = pin; }
 
  protected:
+  void process_ook_(uint8_t level, int32_t delta);
   bool decode_6002rm_(uint8_t *data, uint8_t len);
   bool decode_899_(uint8_t *data, uint8_t len);
   bool midnight_{false};
