@@ -307,7 +307,7 @@ bool AcuRite::on_receive(remote_base::RemoteReceiveData data)
 {
   ESP_LOGI(TAG, "on_receive %d", data.size());
   for(auto i : data.get_raw_data()) {
-    process_ook_(i >= 0 ? 1 : 0, std::abs(i));
+    process_ook_(i >= 0 ? 0 : 1, std::abs(i));
   }
   return true;
 }
