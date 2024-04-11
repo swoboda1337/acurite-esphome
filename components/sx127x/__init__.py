@@ -10,6 +10,7 @@ DEPENDENCIES = ["spi"]
 
 CONF_NSS_PIN = 'nss_pin'
 CONF_RST_PIN = 'rst_pin'
+CONF_OOK_FLOOR = "ook_floor"
 CONF_FREQUENCY = "frequency"
 CONF_MODULATION = "modulation"
 CONF_BANDWIDTH = "bandwidth"
@@ -54,6 +55,7 @@ CONFIG_SCHEMA = (
             cv.GenerateID(): cv.declare_id(SX127x),
             cv.Required(CONF_RST_PIN): pins.internal_gpio_output_pin_schema,
             cv.Required(CONF_NSS_PIN): pins.internal_gpio_output_pin_schema,
+            cv.Optional(CONF_OOK_FLOOR, default=-122): cv.float_range(min=-128, max=0),
             cv.Required(CONF_FREQUENCY): cv.int_range(min=137000000, max=1020000000),
             cv.Required(CONF_MODULATION): cv.enum(MODULATION),
             cv.Required(CONF_BANDWIDTH): cv.enum(BANDWIDTH),
@@ -69,6 +71,7 @@ async def to_code(config):
     cg.add(var.set_rst_pin(rst_pin))
     nss_pin = await cg.gpio_pin_expression(config[CONF_NSS_PIN])
     cg.add(var.set_nss_pin(nss_pin))
+    cg.add(var.set_ook_floor(config.get(CONF_OOK_FLOOR)))
     cg.add(var.set_frequency(config[CONF_FREQUENCY]))
     cg.add(var.set_rx_modulation(config[CONF_MODULATION]))
     cg.add(var.set_rx_bandwidth(config[CONF_BANDWIDTH]))

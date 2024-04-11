@@ -45,8 +45,9 @@ class SX127x : public Component,
   void dump_config() override;
   float get_setup_priority() const override;
 
-  void set_rst_pin(InternalGPIOPin *rst) { this->rst_ = rst; }
-  void set_nss_pin(InternalGPIOPin *nss) { this->nss_ = nss; }
+  void set_rst_pin(InternalGPIOPin *rst_pin) { this->rst_pin_ = rst_pin; }
+  void set_nss_pin(InternalGPIOPin *nss_pin) { this->nss_pin_ = nss_pin; }
+  void set_ook_floor(float ook_floor) { this->ook_floor_ = ook_floor; }
   void set_frequency(uint32_t frequency) { this->frequency_ = frequency; }
   void set_rx_modulation(SX127xMod modulation) { this->modulation_ = modulation; }
   void set_rx_bandwidth(SX127xRxBw bandwidth) { this->bandwidth_ = bandwidth; }
@@ -55,8 +56,9 @@ class SX127x : public Component,
   void write_register_(uint8_t address, uint8_t value);
   uint8_t single_transfer_(uint8_t address, uint8_t value);
   uint8_t read_register_(uint8_t address);
-  InternalGPIOPin *rst_{nullptr};
-  InternalGPIOPin *nss_{nullptr};
+  InternalGPIOPin *rst_pin_{nullptr};
+  InternalGPIOPin *nss_pin_{nullptr};
+  float ook_floor_;
   SX127xRxBw bandwidth_; 
   SX127xMod modulation_;
   uint32_t frequency_;
