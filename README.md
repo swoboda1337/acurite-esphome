@@ -23,7 +23,7 @@ Example yaml to use in esphome device config:
     remote_receiver:
       pin: GPIO32
       filter: 255us
-      idle: 2000us
+      idle: 800us
       buffer_size: 100000b
       memory_blocks: 8
 
