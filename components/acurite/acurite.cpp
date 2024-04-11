@@ -277,6 +277,8 @@ bool AcuRite::on_receive(remote_base::RemoteReceiveData data)
     return false;
   }
 
+  ESP_LOGI(TAG, "Resetting daily totals %d", data[0]);
+
   for(auto i : data.get_raw_data()) {
     bool isSync = std::abs(ACURITE_SYNC - std::abs(i)) < ACURITE_DELTA;
     bool isZero = std::abs(ACURITE_ZERO - std::abs(i)) < ACURITE_DELTA;
