@@ -269,6 +269,14 @@ bool AcuRite::decode_899_(uint8_t *data, uint8_t len) {
 
 bool AcuRite::on_receive(remote_base::RemoteReceiveData data)
 {
+  uint32_t bits{0};
+  uint32_t syncs{0};
+  uint8_t bytes[8];
+
+  if (data.size() < ((7 * 8) * 2 + 4)) {
+    return false;
+  }
+
   for(auto i : data.get_raw_data()) {
     bool isSync = std::abs(ACURITE_SYNC - std::abs(i)) < ACURITE_DELTA;
     bool isZero = std::abs(ACURITE_ZERO - std::abs(i)) < ACURITE_DELTA;
@@ -278,39 +286,39 @@ bool AcuRite::on_receive(remote_base::RemoteReceiveData data)
     // validate signal state, only look for two syncs
     // as the first one can be affected by noise until
     // the agc adjusts
-    if ((isOne || isZero) && this->syncs_ > 2) {
+    if ((isOne || isZero) && syncs > 2) {
       // detect bit after on is complete
       if (level == true) {
-        uint8_t idx = this->bits_ / 8;
-        uint8_t bit = 1 << (7 - (this->bits_ & 7));
+        uint8_t idx = bits / 8;
+        uint8_t bit = 1 << (7 - (bits & 7));
         if (isOne) {
-          this->data_[idx] |=  bit;
+          bytes[idx] |=  bit;
         } else {
-          this->data_[idx] &= ~bit;
+          bytes[idx] &= ~bit;
         }
-        this->bits_ += 1;
+        bits += 1;
 
         // try to decode and reset if needed, return after each
         // successful decode to avoid blocking too long 
-        if (decode_899_(this->data_, this->bits_) || 
-            decode_6002rm_(this->data_, this->bits_) || 
-            this->bits_ >= sizeof(this->data_) * 8) {
+        if (this->decode_899_(bytes, bits) || 
+            this->decode_6002rm_(bytes, bits) || 
+            bits >= sizeof(bytes) * 8) {
           ESP_LOGVV(TAG, "AcuRite data: %02x%02x%02x%02x%02x%02x%02x%02x", 
-                    this->data_[0], this->data_[1], this->data_[2], this->data_[3], 
-                    this->data_[4], this->data_[5], this->data_[6], this->data_[7]);
-          this->bits_ = 0;
-          this->syncs_ = 0;
+                    bytes[0], bytes[1], bytes[2], bytes[3], 
+                    bytes[4], bytes[5], bytes[6], bytes[7]);
+          bits = 0;
+          syncs = 0;
         }
       }
-    } else if (isSync && this->bits_ == 0) {
+    } else if (isSync && bits == 0) {
       // count sync after off is complete
       if (level == false) {
-        this->syncs_++;
+        syncs++;
       }
     } else {
       // reset if state is invalid
-      this->bits_ = 0;
-      this->syncs_ = 0;
+      bits = 0;
+      syncs = 0;
     }
   }
   return true;

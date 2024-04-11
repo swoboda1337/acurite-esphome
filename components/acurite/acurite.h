@@ -88,10 +88,6 @@ class AcuRite : public Component, public remote_base::RemoteReceiverListener {
 #endif
   time::RealTimeClock *srctime_{nullptr};
   remote_receiver::RemoteReceiverComponent *remote_receiver_{nullptr};
-  uint32_t bits_{0};
-  uint32_t syncs_{0};
-  uint32_t prev_{0};
-  uint8_t data_[8];
 };
 
 }  // namespace acurite
