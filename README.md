@@ -19,7 +19,13 @@ Example yaml to use in esphome device config:
       - platform: homeassistant
     
     acurite:
+
+    remote_receiver:
       pin: GPIO32
+      filter: 255us
+      idle: 2000us
+      buffer_size: 100000b
+      memory_blocks: 8
 
     binary_sensor:
       - platform: acurite

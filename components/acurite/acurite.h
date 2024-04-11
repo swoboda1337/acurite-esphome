@@ -5,6 +5,7 @@
 #include "esphome/core/gpio.h"
 #include "esphome/core/component.h"
 #include "esphome/components/time/real_time_clock.h"
+#include "esphome/components/remote_receiver/remote_receiver.h"
 
 #ifdef USE_SENSOR
 #include "esphome/components/sensor/sensor.h"
@@ -16,19 +17,6 @@
 
 namespace esphome {
 namespace acurite {
-
-struct OokStore {
-  static void gpio_intr(OokStore *arg);
-  volatile uint32_t *buffer{nullptr};
-  volatile uint32_t write{0};
-  volatile uint32_t read{0};
-  volatile uint32_t prev{0};
-  volatile bool filtered{false};
-  volatile bool overflow{false};
-  uint32_t size{8192};
-  uint8_t filter{50};
-  ISRInternalGPIOPin pin;
-};
 
 #ifdef USE_SENSOR
 class AcuRiteDevice {
@@ -67,8 +55,9 @@ class AcuRiteDevice {
 };
 #endif
 
-class AcuRite : public Component { 
+class AcuRite : public Component, public remote_base::RemoteReceiverListener { 
  public:
+  bool on_receive(remote_base::RemoteReceiveData data) override;
   void setup() override;
   void loop() override;
   float get_setup_priority() const override;
@@ -85,7 +74,7 @@ class AcuRite : public Component {
   void set_rainfall_sensor(binary_sensor::BinarySensor *sensor) { rainfall_sensor_ = sensor; }
 #endif
   void set_srctime(time::RealTimeClock *srctime) { this->srctime_ = srctime; }
-  void set_pin(InternalGPIOPin *pin) { this->pin_ = pin; }
+  void set_srcrecv(remote_receiver::RemoteReceiverComponent *srcrecv) { this->remote_receiver_ = srcrecv; }
 
  protected:
   bool decode_6002rm_(uint8_t *data, uint8_t len);
@@ -98,12 +87,7 @@ class AcuRite : public Component {
   binary_sensor::BinarySensor *rainfall_sensor_{nullptr};
 #endif
   time::RealTimeClock *srctime_{nullptr};
-  InternalGPIOPin *pin_{nullptr};
-  OokStore store_;
-  uint32_t bits_{0};
-  uint32_t syncs_{0};
-  uint32_t prev_{0};
-  uint8_t data_[8];
+  remote_receiver::RemoteReceiverComponent *remote_receiver_{nullptr};
 };
 
 }  // namespace acurite
