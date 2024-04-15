@@ -4,7 +4,7 @@ The AcuRite component can be run without any sensors configured. Data received f
 
 Binary rain sensor is true if there was any rain in the last 15 minutes (at least one rain sensor needs to be configured for this to work).
 
-A 433 MHz board that provides OOK data over a GPIO is required for this component to work. This component has been tested with the LILYGO LoRa32 V2.1_1.6 board using my [sx127x](https://github.com/swoboda1337/sx127x-esphome) component.
+A 433 MHz board that provides OOK data over a GPIO is required for this component to work. This component has been tested with the LILYGO LoRa32 V2.1_1.6 board using my [SX127x](https://github.com/swoboda1337/sx127x-esphome) component.
 
 Example yaml to use in esphome device config:
     
@@ -19,7 +19,13 @@ Example yaml to use in esphome device config:
       - platform: homeassistant
     
     acurite:
+
+    remote_receiver:
       pin: GPIO32
+      filter: 255us
+      idle: 800us
+      buffer_size: 100000b
+      memory_blocks: 8
 
     binary_sensor:
       - platform: acurite
