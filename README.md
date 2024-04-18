@@ -38,18 +38,56 @@ Example yaml to use in esphome device config:
           - device: 0x1d2e
             temperature:
               name: "AcuRite Temperature 1"
+              filters:
+                - timeout: 5min
+                - or:
+                  - throttle: 30min
+                  - delta: 0.01
             humidity:
               name: "AcuRite Humidity 1"
+              filters:
+                - timeout: 5min
+                - or:
+                  - throttle: 30min
+                  - delta: 0.01
           - device: 0x1fd2
             temperature:
               name: "AcuRite Temperature 2"
+              filters:
+                - timeout: 5min
+                - or:
+                  - throttle: 30min
+                  - delta: 0.01
             humidity:
               name: "AcuRite Humidity 2"
+              filters:
+                - timeout: 5min
+                - or:
+                  - throttle: 30min
+                  - delta: 0.01
           - device: 0x2838
             rain_1hr:
               name: "AcuRite Rainfall 1Hr"
+              filters:
+                - multiply: 0.98  # calibration value
+                - timeout: 5min
+                - or:
+                  - throttle: 30min
+                  - delta: 0.01
             rain_24hr:
               name: "AcuRite Rainfall 24Hr"
+              filters:
+                - multiply: 0.98  # calibration value
+                - timeout: 5min
+                - or:
+                  - throttle: 30min
+                  - delta: 0.01
             rain_daily:
               name: "AcuRite Rainfall Daily"
+              filters:
+                - multiply: 0.98  # calibration value
+                - timeout: 5min
+                - or:
+                  - throttle: 30min
+                  - delta: 0.01
 

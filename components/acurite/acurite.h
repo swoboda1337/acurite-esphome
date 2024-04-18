@@ -30,23 +30,17 @@ class AcuRiteDevice {
   void humidity_value(float value);
   bool rainfall_count(uint32_t count, ESPTime now);
   void reset_daily();
-  void mark_unknown();
 
  protected:
   sensor::Sensor *temperature_sensor_{nullptr};
-  float temperature_published_{1000};
   float temperature_last_{1000};
 
   sensor::Sensor *humidity_sensor_{nullptr};
-  float humidity_published_{1000};
   float humidity_last_{1000};
 
   sensor::Sensor *rainfall_sensor_daily_{nullptr};
   sensor::Sensor *rainfall_sensor_24hr_{nullptr};
   sensor::Sensor *rainfall_sensor_1hr_{nullptr};
-  uint32_t rainfall_published_daily_{0xFFFFFFFF};
-  uint32_t rainfall_published_24hr_{0xFFFFFFFF};
-  uint32_t rainfall_published_1hr_{0xFFFFFFFF};
   uint32_t rainfall_count_device_{0xFFFFFFFF};
   uint32_t rainfall_count_last_{0xFFFFFFFF};
   uint32_t rainfall_count_daily_{0};
