@@ -140,13 +140,8 @@ bool AcuRite::validate_(uint8_t *data, uint8_t len)
 }
 
 bool AcuRite::decode_6002rm_(uint8_t *data, uint8_t len) {
-  // needs to be 7 bytes
-  if (len < 7) {
-    return false;
-  }
-  
-  // check crc and parity
-  if (!this->validate_(data, 7)) {
+  // check length and validate
+  if (len < 7 || this->validate_(data, 7) == false) {
     return false;
   }
 
@@ -169,13 +164,8 @@ bool AcuRite::decode_6002rm_(uint8_t *data, uint8_t len) {
 }
 
 bool AcuRite::decode_899_(uint8_t *data, uint8_t len) {
-  // needs to be 8 bytes
-  if (len < 8) {
-    return false;
-  }
-  
-  // check crc and parity
-  if (!this->validate_(data, 8)) {
+  // check length and validate
+  if (len < 8 || this->validate_(data, 8) == false) {
     return false;
   }
 
