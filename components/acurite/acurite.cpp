@@ -112,33 +112,42 @@ void AcuRiteDevice::reset_daily() {
 }
 #endif
 
-bool AcuRite::decode_6002rm_(uint8_t *data, uint8_t len) {
-  // needs to be 7 bytes
-  if (len != 7 * 8) {
-    return false;
-  }
-  
+bool AcuRite::validate_(uint8_t *data, uint8_t len)
+{
   // checksum
   uint8_t sum = 0;
-  for (int32_t i = 0; i <= 5; i++) {
+  for (int32_t i = 0; i < len - 1; i++) {
     sum += data[i];
   }
-  if (sum != data[6]) {
-    ESP_LOGV(TAG, "Checksum failure %02x vs %02x", sum, data[6]);
+  if (sum != data[len - 1]) {
+    ESP_LOGV(TAG, "Checksum failure %02x vs %02x", sum, data[len - 1]);
     return false;
   }
 
-  // parity (bytes 2 to 5)
-  for (int32_t i = 2; i <= 5; i++) {
-    uint8_t parity = (data[i] >> 7) & 1;
+  // parity (excludes id and crc)
+  for (int32_t i = 2; i < len - 1; i++) {
     uint8_t sum = 0;
-    for (int32_t b = 0; b <= 6; b++) {
+    for (int32_t b = 0; b < 8; b++) {
       sum ^= (data[i] >> b) & 1;
     }
-    if (parity != sum) {
+    if (sum != 0) {
       ESP_LOGV(TAG, "Parity failure on byte %d", i);
       return false;
     }
+  }
+
+  return true;
+}
+
+bool AcuRite::decode_6002rm_(uint8_t *data, uint8_t len) {
+  // needs to be 7 bytes
+  if (len < 7) {
+    return false;
+  }
+  
+  // check crc and parity
+  if (!this->validate_(data, 7)) {
+    return false;
   }
 
   // decode data and update sensor
@@ -161,31 +170,13 @@ bool AcuRite::decode_6002rm_(uint8_t *data, uint8_t len) {
 
 bool AcuRite::decode_899_(uint8_t *data, uint8_t len) {
   // needs to be 8 bytes
-  if (len != 8 * 8) {
+  if (len < 8) {
     return false;
   }
   
-  // checksum
-  uint8_t sum = 0;
-  for (int32_t i = 0; i <= 6; i++) {
-    sum += data[i];
-  }
-  if (sum != data[7]) {
-    ESP_LOGV(TAG, "Checksum failure %02x vs %02x", sum, data[7]);
+  // check crc and parity
+  if (!this->validate_(data, 8)) {
     return false;
-  }
-
-  // parity (bytes 4 to 6)
-  for (int32_t i = 4; i <= 6; i++) {
-    uint8_t parity = (data[i] >> 7) & 1;
-    uint8_t sum = 0;
-    for (int32_t b = 0; b <= 6; b++) {
-      sum ^= (data[i] >> b) & 1;
-    }
-    if (parity != sum) {
-      ESP_LOGV(TAG, "Parity failure on byte %d", i);
-      return false;
-    }
   }
 
   // decode data and update sensor
@@ -251,8 +242,8 @@ bool AcuRite::on_receive(remote_base::RemoteReceiveData data)
 
         // try to decode and reset if needed, return after each
         // successful decode to avoid blocking too long 
-        if (this->decode_899_(bytes, bits) || 
-            this->decode_6002rm_(bytes, bits) || 
+        if (this->decode_899_(bytes, bits / 8) || 
+            this->decode_6002rm_(bytes, bits / 8) || 
             bits >= sizeof(bytes) * 8) {
           ESP_LOGVV(TAG, "AcuRite data: %02x%02x%02x%02x%02x%02x%02x%02x", 
                     bytes[0], bytes[1], bytes[2], bytes[3], 
