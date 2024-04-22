@@ -149,11 +149,12 @@ bool AcuRite::decode_6002rm_(uint8_t *data, uint8_t len) {
   static const char channel_lut[4] = {'C', 'X', 'B', 'A'};
   char channel = channel_lut[data[0] >> 6];
   uint16_t id = ((data[0] & 0x3F) << 8) | (data[1] & 0xFF);
+  uint16_t battery = (data[2] >> 6) & 1;
   float humidity = data[3] & 0x7F;
   float temperature = ((data[4] & 0x0F) << 7) | (data[5] & 0x7F);
   temperature = (temperature - 1000) / 10.0;
-  ESP_LOGD(TAG, "Temp sensor: channel %c, id %04x, temperature %.1f°C, humidity %.1f%%", 
-           channel, id, temperature, humidity);
+  ESP_LOGD(TAG, "Temp sensor: channel %c, id %04x, bat %d, temp %.1f°C, rh %.1f%%",
+           channel, id, battery, temperature, humidity);
 #ifdef USE_SENSOR
   if (this->devices_.count(id) > 0) {
     this->devices_[id]->temperature_value(temperature);
@@ -173,8 +174,10 @@ bool AcuRite::decode_899_(uint8_t *data, uint8_t len) {
   static const char channel_lut[4] = {'A', 'B', 'C', 'X'};
   char channel = channel_lut[data[0] >> 6];
   uint16_t id = ((data[0] & 0x3F) << 8) | (data[1] & 0xFF);
+  uint16_t battery = (data[2] >> 6) & 1;
   uint32_t count = ((data[4] & 0x7F) << 14) | ((data[5] & 0x7F) << 7) | ((data[6] & 0x7F) << 0);
-  ESP_LOGD(TAG, "Rain gauge: channel %c, id %04x, count %d", channel, id, count);
+  ESP_LOGD(TAG, "Rain gauge:  channel %c, id %04x, bat %d, count %d", 
+           channel, id, battery, count);
 #ifdef USE_SENSOR
   if (this->devices_.count(id) > 0) {
     ESPTime now = this->srctime_->utcnow();
