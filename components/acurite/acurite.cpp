@@ -153,7 +153,7 @@ bool AcuRite::decode_6002rm_(uint8_t *data, uint8_t len) {
   float humidity = data[3] & 0x7F;
   float temperature = ((data[4] & 0x0F) << 7) | (data[5] & 0x7F);
   temperature = (temperature - 1000) / 10.0;
-  ESP_LOGD(TAG, "Temp sensor: channel %c, id %04x, bat %d, temp %.1f°C, rh %.1f%%",
+  ESP_LOGD(TAG, "Temp sensor: channel %c, id %04x, bat %d, temp %.1f°C, humidity %.1f%%",
            channel, id, battery, temperature, humidity);
 #ifdef USE_SENSOR
   if (this->devices_.count(id) > 0) {
