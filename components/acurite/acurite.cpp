@@ -24,7 +24,7 @@ void AcuRiteDevice::humidity_value(float value) {
   if (this->humidity_sensor_) {
     // if the new value changed significantly wait for it to be confirmed a 
     // second time in case it was corrupted by random bit flips
-    if (fabsf(value - this->humidity_last_) < 2.0) {
+    if (fabsf(value - this->humidity_last_) < 1.0) {
       this->humidity_sensor_->publish_state(value);
     }
     this->humidity_last_ = value;
@@ -33,10 +33,18 @@ void AcuRiteDevice::humidity_value(float value) {
 
 void AcuRiteDevice::rainfall_count(uint32_t count) {
   if (this->rainfall_sensor_) {
-    // if the new value changed significantly wait for it to be confirmed a 
-    // second time in case it was corrupted by random bit flips
+    // if the new value changed significantly or decreased wait for it to be 
+    // confirmed a second time in case it was corrupted by random bit flips
     if (count >= this->rainfall_last_ && (count - this->rainfall_last_) < 16) {
-      this->rainfall_sensor_->publish_state(count * 0.254);
+      if (count != this->rainfall_state_.device) {
+        // update rainfall state and save to nvm
+        if (count > this->rainfall_state_.device) {
+          this->rainfall_state_.total += count - this->rainfall_state_.device;
+        }
+        this->rainfall_state_.device = count;
+        this->preferences_.save(&this->rainfall_state_);
+      }
+      this->rainfall_sensor_->publish_state(this->rainfall_state_.total * 0.254);
     }
     this->rainfall_last_ = count;
   }
@@ -44,7 +52,13 @@ void AcuRiteDevice::rainfall_count(uint32_t count) {
 
 void AcuRiteDevice::setup()
 {
-
+  if (this->rainfall_sensor_) {
+    // load rainfall state from nvm, rainfall value needs to always increase even 
+    // after a power reset on the esp or sensor
+    uint32_t type = fnv1_hash(std::string("AcuRite: ") + format_hex(this->id_));
+    this->preferences_ = global_preferences->make_preference<RainfallState>(type);
+    this->preferences_.load(&this->rainfall_state_);
+  }
 }
 #endif
 
@@ -112,7 +126,7 @@ bool AcuRite::decode_899_(uint8_t *data, uint8_t len) {
   uint16_t id = ((data[0] & 0x3F) << 8) | (data[1] & 0xFF);
   uint16_t battery = (data[2] >> 6) & 1;
   uint32_t count = ((data[4] & 0x7F) << 14) | ((data[5] & 0x7F) << 7) | ((data[6] & 0x7F) << 0);
-  ESP_LOGD(TAG, "Rain gauge:  channel %c, id %04x, bat %d, count %d", 
+  ESP_LOGD(TAG, "Rain sensor: channel %c, id %04x, bat %d, count %d", 
            channel, id, battery, count);
 #ifdef USE_SENSOR
   if (this->devices_.count(id) > 0) {

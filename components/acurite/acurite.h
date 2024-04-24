@@ -4,6 +4,7 @@
 
 #include "esphome/core/gpio.h"
 #include "esphome/core/component.h"
+#include "esphome/core/preferences.h"
 #include "esphome/components/remote_receiver/remote_receiver.h"
 
 #ifdef USE_SENSOR
@@ -26,13 +27,19 @@ class AcuRiteDevice {
   void rainfall_count(uint32_t count);
 
  protected:
-  sensor::Sensor *temperature_sensor_{nullptr};
-  sensor::Sensor *humidity_sensor_{nullptr};
+  struct RainfallState {
+    uint32_t total{0};
+    uint32_t device{0};
+  };
+  ESPPreferenceObject preferences_;
+  RainfallState rainfall_state_;
   sensor::Sensor *rainfall_sensor_{nullptr};
-  float temperature_last_{1000};
-  float humidity_last_{1000};
+  sensor::Sensor *humidity_sensor_{nullptr};
+  sensor::Sensor *temperature_sensor_{nullptr};
   uint32_t rainfall_last_{0xFFFFFFFF};
-  uint16_t id_;
+  float humidity_last_{1000};
+  float temperature_last_{1000};
+  uint16_t id_{0};
 };
 #endif
 
