@@ -61,7 +61,6 @@ class AcuRite : public Component, public remote_base::RemoteReceiverListener {
   bool decode_6002rm_(uint8_t *data, uint8_t len);
   bool decode_899_(uint8_t *data, uint8_t len);
   bool validate_(uint8_t *data, uint8_t len);
-  bool midnight_{false};
 #ifdef USE_SENSOR
   std::map<uint16_t, AcuRiteDevice*> devices_;
 #endif
