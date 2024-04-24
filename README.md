@@ -15,9 +15,6 @@ Example yaml to use in esphome device config:
           ref: main
         refresh: 1d
     
-    time:
-      - platform: homeassistant
-    
     acurite:
 
     remote_receiver:
@@ -26,11 +23,6 @@ Example yaml to use in esphome device config:
       idle: 800us
       buffer_size: 100000b
       memory_blocks: 8
-
-    binary_sensor:
-      - platform: acurite
-        rain:
-          name: "Backyard Rainfall"
 
     sensor:
       - platform: acurite
@@ -66,28 +58,11 @@ Example yaml to use in esphome device config:
                   - throttle: 30min
                   - delta: 0.01
           - device: 0x2838
-            rain_1hr:
-              name: "AcuRite Rainfall 1Hr"
+            rain:
+              name: "AcuRite Rainfall"
               filters:
-                - multiply: 0.98  # calibration value
-                - timeout: 5min
-                - or:
-                  - throttle: 30min
-                  - delta: 0.01
-            rain_24hr:
-              name: "AcuRite Rainfall 24Hr"
+              force_update: true
               filters:
-                - multiply: 0.98  # calibration value
                 - timeout: 5min
-                - or:
-                  - throttle: 30min
-                  - delta: 0.01
-            rain_daily:
-              name: "AcuRite Rainfall Daily"
-              filters:
-                - multiply: 0.98  # calibration value
-                - timeout: 5min
-                - or:
-                  - throttle: 30min
-                  - delta: 0.01
+                - throttle: 50sec
 
