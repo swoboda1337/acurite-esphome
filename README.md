@@ -68,9 +68,9 @@ Example yaml to use in esphome device config:
 
 Rain sensors have the state class STATE_CLASS_TOTAL_INCREASING. These values will only go up and will never decrease. Even if both the esp32 and sensor are reset. Note if you want to add a multiply filter for calibration it's easier to do before the sensor is added. If you apply calibration later on its best to add an offset filter to adjust the value back to where it should be. It's also be recommended to comment out the rain sensor in the yaml during calibration, reset the sensor after, update filters and then re-enable the rain sensor. That way the resulting total will be unchanged and won't affect any statistics in Home Assistant.
 
-Obviously a running life time total for rain is not very useful as is. Here are some example sensor that can be added to Home Assistant's configuration.yaml
+Obviously a running life time total for rain is not very useful as is. Here are some example sensor that can be added to Home Assistant's configuration.yaml (it is recommended to use force_update so these sensors work correctly). 
 
-The first set of sensors are window based, ie how much rain has fallen in the last x amount of time:
+These sensors are window based, will calculate how much rain has fallen within that window:
 
     sensor:
       - platform: statistics
@@ -92,7 +92,7 @@ The first set of sensors are window based, ie how much rain has fallen in the la
         max_age:
           hours: 24
 
-These sensors will reset at specific times which is useful for daily, weekly or monthly values sensors:
+These sensors will reset at specific times which is useful for daily, weekly or monthly:
 
     utility_meter:
       test_daily:
