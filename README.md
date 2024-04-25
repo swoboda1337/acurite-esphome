@@ -111,13 +111,6 @@ These sensors will reset at specific times which is useful for daily, weekly or 
         name: AcuRite Rainfall Monthly
         cycle: monthly
 
-This is a binary moisture sensor, can also be added graphically:
-
-    template:
-      - trigger:
-          - platform: state
-            entity_id: sensor.acurite_rainfall_15min 
-        binary_sensor:
-          - name: "AcuRite Rainfall Moisture"
-            device_class: "moisture"
-            state: "{{states('sensor.acurite_rainfall_15min')|float > 0}}"
+A binary moisture sensor can also be created using this template:
+            
+    {{states('sensor.acurite_rainfall_15min')|float > 0}}
