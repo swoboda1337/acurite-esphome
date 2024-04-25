@@ -30,6 +30,7 @@ Example yaml to use in esphome device config:
           - device: 0x1d2e
             temperature:
               name: "AcuRite Temperature 1"
+              force_update: true
               filters:
                 - timeout: 5min
                 - or:
@@ -37,6 +38,7 @@ Example yaml to use in esphome device config:
                   - delta: 0.01
             humidity:
               name: "AcuRite Humidity 1"
+              force_update: true
               filters:
                 - timeout: 5min
                 - or:
@@ -45,6 +47,7 @@ Example yaml to use in esphome device config:
           - device: 0x1fd2
             temperature:
               name: "AcuRite Temperature 2"
+              force_update: true
               filters:
                 - timeout: 5min
                 - or:
@@ -52,6 +55,7 @@ Example yaml to use in esphome device config:
                   - delta: 0.01
             humidity:
               name: "AcuRite Humidity 2"
+              force_update: true
               filters:
                 - timeout: 5min
                 - or:
@@ -60,15 +64,16 @@ Example yaml to use in esphome device config:
           - device: 0x2838
             rain:
               name: "AcuRite Rainfall"
-              filters:
               force_update: true
               filters:
                 - timeout: 5min
                 - throttle: 50sec
 
-Rain sensors have the state class STATE_CLASS_TOTAL_INCREASING. These values will only go up and will never decrease. Even if both the esp32 and sensor are reset. Note if you want to add a multiply filter for calibration it's easier to do before the sensor is added. If you apply calibration later on its best to add an offset filter to adjust the value back to where it should be. It's also be recommended to comment out the rain sensor in the yaml during calibration, reset the sensor after, update filters and then re-enable the rain sensor. That way the resulting total will be unchanged and won't affect any statistics in Home Assistant.
+It is recommended to use force_update so any statistics sensors in Home Assistant will work correctly. For example if the humidity stays at 99% all day, without force_update, a max/min statistics sensor would show unavailable as no data points will be logged. Using the delta and throttle filters will limit the amount of data being sent up and stored. 
 
-Obviously a running life time total for rain is not very useful as is. Here are some example sensor that can be added to Home Assistant's configuration.yaml (it is recommended to use force_update so these sensors work correctly). 
+Rain sensors have the state class STATE_CLASS_TOTAL_INCREASING. These values will only go up and never decrease (sensor state is stored in nvm). Note if you want to add a multiply filter for calibration it's easier to do before the sensor is added. If you apply calibration later on its best to add an offset filter to adjust the value back to where it should be. It's recommended to comment out the rain sensor in the yaml during calibration, reset the rain sensor after, update the filters and then re-enable the rain sensor. That way the resulting total will be unchanged and won't affect any statistics in Home Assistant.
+
+Obviously a running life time total for rain is not very useful as is. Here are some example sensor that can be added to Home Assistant's configuration.yaml
 
 These sensors are window based, will calculate how much rain has fallen within that window:
 
