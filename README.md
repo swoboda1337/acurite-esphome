@@ -111,6 +111,6 @@ These sensors will reset at specific times which is useful for daily, weekly or 
         name: AcuRite Rainfall Monthly
         cycle: monthly
 
-A binary moisture sensor can also be created using this template:
+A binary moisture sensor can also be created using a template:
             
     {{states('sensor.acurite_rainfall_15min')|float > 0}}
