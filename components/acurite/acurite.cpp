@@ -8,15 +8,6 @@ namespace acurite {
 
 static const char *const TAG = "acurite";
 
-// time before rainfall sensor is marked as dry
-static const int32_t RAINFALL_TIMEOUT = 15 * 60 * 1000;
-
-// acurite ook params
-static const int32_t ACURITE_SYNC  = 600;
-static const int32_t ACURITE_ONE   = 400;
-static const int32_t ACURITE_ZERO  = 200;
-static const int32_t ACURITE_DELTA = 100;
-
 #ifdef USE_SENSOR
 void AcuRiteDevice::temperature_value(float value) {
   if (this->temperature_sensor_) {
@@ -33,81 +24,40 @@ void AcuRiteDevice::humidity_value(float value) {
   if (this->humidity_sensor_) {
     // if the new value changed significantly wait for it to be confirmed a 
     // second time in case it was corrupted by random bit flips
-    if (fabsf(value - this->humidity_last_) < 2.0) {
+    if (fabsf(value - this->humidity_last_) < 1.0) {
       this->humidity_sensor_->publish_state(value);
     }
     this->humidity_last_ = value;
   }
 }
 
-bool AcuRiteDevice::rainfall_count(uint32_t count, ESPTime now) {
-  uint32_t delta = 0;
-
-  // if the new value changed significantly wait for it to be confirmed a 
-  // second time in case it was corrupted by random bit flips
-  if ((count - this->rainfall_count_last_) < 16) {
-    uint8_t hour = this->rainfall_count_time_.hour;
-    uint8_t minute = this->rainfall_count_time_.minute;
-
-    // check for device reset and calculate delta
-    if (count < this->rainfall_count_device_) {
-      this->rainfall_count_device_ = count;
-    }
-    delta = count - this->rainfall_count_device_;
-    this->rainfall_count_device_ = count;
-
-    // zero expired data, update time and increment counts
-    if (now.is_valid() && now > this->rainfall_count_time_) {
-      while (minute != now.minute || hour != now.hour) {
-        minute += 1;
-        if (minute >= 60) {
-          minute = 0;
-          hour += 1;
-          if (hour >= 24) {
-            hour = 0;
-          }
+void AcuRiteDevice::rainfall_count(uint32_t count) {
+  if (this->rainfall_sensor_) {
+    // if the new value changed significantly or decreased wait for it to be 
+    // confirmed a second time in case it was corrupted by random bit flips
+    if (count >= this->rainfall_last_ && (count - this->rainfall_last_) < 16) {
+      if (count != this->rainfall_state_.device) {
+        // update rainfall state and save to nvm
+        if (count > this->rainfall_state_.device) {
+          this->rainfall_state_.total += count - this->rainfall_state_.device;
         }
-        this->rainfall_count_buffer_[hour * 60 + minute] = 0;
+        this->rainfall_state_.device = count;
+        this->preferences_.save(&this->rainfall_state_);
       }
-      this->rainfall_count_time_ = now;
+      this->rainfall_sensor_->publish_state(this->rainfall_state_.total * 0.254);
     }
-    this->rainfall_count_buffer_[hour * 60 + minute] += delta;
-
-    // update daily sensor
-    if (this->rainfall_sensor_daily_) {
-      this->rainfall_count_daily_ += delta;
-      this->rainfall_sensor_daily_->publish_state(this->rainfall_count_daily_ * 0.254);
-    }
-
-    // update 1 hour sensor
-    if (this->rainfall_sensor_1hr_) {
-      uint32_t total = 0;
-      for (auto i = 0; i < 1 * 60; i++) {
-        total += this->rainfall_count_buffer_[(24 * 60 + hour * 60 + minute - i) % (24 * 60)];
-      }
-      this->rainfall_sensor_1hr_->publish_state(total * 0.254);
-    }
-
-    // update 24 hour sensor
-    if (this->rainfall_sensor_24hr_) {
-      uint32_t total = 0;
-      for (auto i = 0; i < 24 * 60; i++) {
-        total += this->rainfall_count_buffer_[i];
-      }
-      this->rainfall_sensor_24hr_->publish_state(total * 0.254);
-    }
+    this->rainfall_last_ = count;
   }
-
-  this->rainfall_count_last_ = count;
-
-  return delta > 0;
 }
 
-void AcuRiteDevice::reset_daily() {
-  // reset daily count and publish
-  if (this->rainfall_sensor_daily_) {
-    this->rainfall_sensor_daily_->publish_state(0.0);
-    this->rainfall_count_daily_ = 0;
+void AcuRiteDevice::setup()
+{
+  if (this->rainfall_sensor_) {
+    // load rainfall state from nvm, rainfall value needs to always increase even 
+    // after a power reset on the esp or sensor
+    uint32_t type = fnv1_hash(std::string("AcuRite: ") + format_hex(this->id_));
+    this->preferences_ = global_preferences->make_preference<RainfallState>(type);
+    this->preferences_.load(&this->rainfall_state_);
   }
 }
 #endif
@@ -176,27 +126,11 @@ bool AcuRite::decode_899_(uint8_t *data, uint8_t len) {
   uint16_t id = ((data[0] & 0x3F) << 8) | (data[1] & 0xFF);
   uint16_t battery = (data[2] >> 6) & 1;
   uint32_t count = ((data[4] & 0x7F) << 14) | ((data[5] & 0x7F) << 7) | ((data[6] & 0x7F) << 0);
-  ESP_LOGD(TAG, "Rain gauge:  channel %c, id %04x, bat %d, count %d", 
+  ESP_LOGD(TAG, "Rain sensor: channel %c, id %04x, bat %d, count %d", 
            channel, id, battery, count);
 #ifdef USE_SENSOR
   if (this->devices_.count(id) > 0) {
-    ESPTime now = this->srctime_->utcnow();
-    if (!now.is_valid()) {
-      // if time is not synchronized daily rain count won't make sense
-      ESP_LOGW(TAG, "Waiting for system time to be synchronized");
-    } else {
-      // use UTC time here to avoid any DST changes
-      bool raining = this->devices_[id]->rainfall_count(count, now);
-#ifdef USE_BINARY_SENSOR
-      if (raining && this->rainfall_sensor_) {
-        // if raining mark sensor as wet and schedule timeout to mark as dry
-        this->rainfall_sensor_->publish_state(true);
-        set_timeout("AcuRite::rainfall_timeout", RAINFALL_TIMEOUT, [this]() {
-          this->rainfall_sensor_->publish_state(false);
-        });
-      }
-#endif
-    }
+    this->devices_[id]->rainfall_count(count);
   }
 #endif
   return true;
@@ -204,6 +138,10 @@ bool AcuRite::decode_899_(uint8_t *data, uint8_t len) {
 
 bool AcuRite::on_receive(remote_base::RemoteReceiveData data)
 {
+  static const int32_t acurite_sync{600};
+  static const int32_t acurite_one{400};
+  static const int32_t acurite_zero{200};
+  static const int32_t acurite_delta{100};
   uint32_t bits{0};
   uint32_t syncs{0};
   uint8_t bytes[8];
@@ -213,9 +151,9 @@ bool AcuRite::on_receive(remote_base::RemoteReceiveData data)
   }
 
   for(auto i : data.get_raw_data()) {
-    bool isSync = std::abs(ACURITE_SYNC - std::abs(i)) < ACURITE_DELTA;
-    bool isZero = std::abs(ACURITE_ZERO - std::abs(i)) < ACURITE_DELTA;
-    bool isOne = std::abs(ACURITE_ONE - std::abs(i)) < ACURITE_DELTA;
+    bool isSync = std::abs(acurite_sync - std::abs(i)) < acurite_delta;
+    bool isZero = std::abs(acurite_zero - std::abs(i)) < acurite_delta;
+    bool isOne = std::abs(acurite_one - std::abs(i)) < acurite_delta;
     bool level = (i >= 0);
 
     // validate signal state, only look for two syncs
@@ -238,9 +176,9 @@ bool AcuRite::on_receive(remote_base::RemoteReceiveData data)
         if (this->decode_899_(bytes, bits / 8) || 
             this->decode_6002rm_(bytes, bits / 8) || 
             bits >= sizeof(bytes) * 8) {
-          ESP_LOGVV(TAG, "AcuRite data: %02x%02x%02x%02x%02x%02x%02x%02x", 
-                    bytes[0], bytes[1], bytes[2], bytes[3], 
-                    bytes[4], bytes[5], bytes[6], bytes[7]);
+          ESP_LOGV(TAG, "AcuRite data: %02x%02x%02x%02x%02x%02x%02x%02x", 
+                   bytes[0], bytes[1], bytes[2], bytes[3], 
+                   bytes[4], bytes[5], bytes[6], bytes[7]);
           bits = 0;
           syncs = 0;
         }
@@ -259,33 +197,13 @@ bool AcuRite::on_receive(remote_base::RemoteReceiveData data)
   return true;
 }
 
-void AcuRite::loop() {
-#ifdef USE_SENSOR
-  // check for midnight to reset daily rainfall
-  ESPTime now = this->srctime_->now();
-  if (now.is_valid()) {
-    if (now.hour == 0) {
-      if (this->midnight_ == false) {
-        ESP_LOGI(TAG, "Resetting daily totals");
-        for (auto const& item : this->devices_) {
-          item.second->reset_daily();
-        }
-        this->midnight_ = true;
-      }
-    } else if (now.hour > 2) {
-      this->midnight_ = false;
-    }
-  }
-#endif
-}
-
 void AcuRite::setup() {
   ESP_LOGI(TAG, "AcuRite Setup");
 
-#ifdef USE_BINARY_SENSOR
-  // init rainfall binary sensor
-  if (this->rainfall_sensor_) {
-    this->rainfall_sensor_->publish_state(false);
+#ifdef USE_SENSOR
+  // setup devices
+  for (auto const& device : this->devices_) {
+    device.second->setup();
   }
 #endif
 
