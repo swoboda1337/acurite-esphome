@@ -66,3 +66,55 @@ Example yaml to use in esphome device config:
                 - timeout: 5min
                 - throttle: 50sec
 
+Rain sensors have the state class STATE_CLASS_TOTAL_INCREASING. These values will only go up and will never decrease. Even if both the esp32 and sensor are reset. Note if you want to add a multiply filter for calibration it's easier to do before the sensor is added. If you apply calibration later on its best to add an offset filter to adjust the value back to where it should be. It's also be recommended to comment out the rain sensor in the yaml during calibration, reset the sensor after, update filters and then re-enable the rain sensor. That way the resulting total will be unchanged and won't affect any statistics in Home Assistant.
+
+Obviously a running life time total for rain is not very useful as is. Here are some example sensor that can be added to Home Assistant's configuration.yaml
+
+The first set of sensors are window based, ie how much rain has fallen in the last x amount of time:
+
+    sensor:
+      - platform: statistics
+        name: "AcuRite Rainfall 15Min"
+        entity_id: sensor.acurite_rainfall
+        state_characteristic: change
+        max_age:
+          minutes: 15
+      - platform: statistics
+        name: "AcuRite Rainfall 1Hr"
+        entity_id: sensor.acurite_rainfall
+        state_characteristic: change
+        max_age:
+          hours: 1
+      - platform: statistics
+        name: "AcuRite Rainfall 24Hr"
+        entity_id: sensor.acurite_rainfall
+        state_characteristic: change
+        max_age:
+          hours: 24
+
+These sensors will reset at specific times which is useful for daily, weekly or monthly values sensors:
+
+    utility_meter:
+      test_daily:
+        source: sensor.acurite_rainfall
+        name: AcuRite Rainfall Daily
+        cycle: daily
+      test_weekly:
+        source: sensor.acurite_rainfall
+        name: AcuRite Rainfall Weekly
+        cycle: weekly
+      test_monthly:
+        source: sensor.acurite_rainfall
+        name: AcuRite Rainfall Monthly
+        cycle: monthly
+
+A binary moisture sensor can also be created:
+
+    template:
+      - trigger:
+          - platform: state
+            entity_id: sensor.acurite_rainfall_15min 
+        binary_sensor:
+          - name: "AcuRite Rainfall Moisture"
+            device_class: "moisture"
+            state: "{{states('sensor.acurite_rainfall_15min')|float > 0}}"
