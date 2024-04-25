@@ -2,8 +2,6 @@ ESPHome AcuRite OOK signal decoder, allowing for an easy integration of 433 MHz 
 
 The AcuRite component can be run without any sensors configured. Data received from all sensors will still be logged, this can be done to determine ids before setting up the sensor yaml.
 
-Binary rain sensor is true if there was any rain in the last 15 minutes (at least one rain sensor needs to be configured for this to work).
-
 A 433 MHz board that provides OOK data over a GPIO is required for this component to work. This component has been tested with the LILYGO LoRa32 V2.1_1.6 board using my [SX127x](https://github.com/swoboda1337/sx127x-esphome) component.
 
 Example yaml to use in esphome device config:
