@@ -71,7 +71,7 @@ It is recommended to use force_update so any statistics sensors in Home Assistan
 
 Rain sensors have the state class STATE_CLASS_TOTAL_INCREASING. These values will only go up and never decrease (sensor state is stored in nvm). Note if you want to add a multiply filter for calibration it's easier to do before the sensor is added. If you apply calibration later on its best to add an offset filter to adjust the value back to where it should be. It's recommended to comment out the rain sensor in the yaml before calibration, reset the rain sensor after, update the filters and then re-enable the rain sensor. That way the resulting total will be unchanged and won't affect any statistics in Home Assistant.
 
-Obviously a running life time total for rain is not very useful as is. Here are some example sensor that can be added to Home Assistant's configuration.yaml
+An increasing total for rainfall is not very useful by itself. Here are some example sensors that can be added to Home Assistant's configuration.yaml
 
 These sensors are window based and will calculate how much rain had fallen within the window:
 
