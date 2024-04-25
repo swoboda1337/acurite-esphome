@@ -73,7 +73,7 @@ Rain sensors have the state class STATE_CLASS_TOTAL_INCREASING. These values wil
 
 Obviously a running life time total for rain is not very useful as is. Here are some example sensor that can be added to Home Assistant's configuration.yaml
 
-These sensors are window based and will calculate how much rain had fallen within that window:
+These sensors are window based and will calculate how much rain had fallen within the window:
 
     sensor:
       - platform: statistics
