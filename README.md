@@ -111,7 +111,7 @@ These sensors will reset at specific times which is useful for daily, weekly or 
         name: AcuRite Rainfall Monthly
         cycle: monthly
 
-A binary moisture sensor is also possible (can also be added graphically):
+This is a binary moisture sensor, can also be added graphically:
 
     template:
       - trigger:
