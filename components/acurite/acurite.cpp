@@ -38,8 +38,10 @@ void AcuRiteDevice::rainfall_count(uint32_t count) {
     if (count >= this->rainfall_last_ && (count - this->rainfall_last_) < 16) {
       if (count != this->rainfall_state_.device) {
         // update rainfall state and save to nvm
-        if (count > this->rainfall_state_.device) {
+        if (count >= this->rainfall_state_.device) {
           this->rainfall_state_.total += count - this->rainfall_state_.device;
+        } else {
+          this->rainfall_state_.total += count;
         }
         this->rainfall_state_.device = count;
         this->preferences_.save(&this->rainfall_state_);
