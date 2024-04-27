@@ -93,7 +93,7 @@ bool AcuRite::validate_(uint8_t *data, uint8_t len)
 
 bool AcuRite::decode_6002rm_(uint8_t *data, uint8_t len) {
   // check length and validate
-  if (len < 7 || this->validate_(data, 7) == false) {
+  if (len != 7 || this->validate_(data, 7) == false) {
     return false;
   }
 
@@ -118,7 +118,7 @@ bool AcuRite::decode_6002rm_(uint8_t *data, uint8_t len) {
 
 bool AcuRite::decode_899_(uint8_t *data, uint8_t len) {
   // check length and validate
-  if (len < 8 || this->validate_(data, 8) == false) {
+  if (len != 8 || this->validate_(data, 8) == false) {
     return false;
   }
 
@@ -173,14 +173,14 @@ bool AcuRite::on_receive(remote_base::RemoteReceiveData data)
         }
         bits += 1;
 
-        // try to decode and reset if needed, return after each
-        // successful decode to avoid blocking too long 
-        if (this->decode_899_(bytes, bits / 8) || 
-            this->decode_6002rm_(bytes, bits / 8) || 
-            bits >= sizeof(bytes) * 8) {
-          ESP_LOGV(TAG, "AcuRite data: %02x%02x%02x%02x%02x%02x%02x%02x", 
-                   bytes[0], bytes[1], bytes[2], bytes[3], 
-                   bytes[4], bytes[5], bytes[6], bytes[7]);
+        // try to decode
+        if ((bits & 7) == 0) {
+          this->decode_899_(bytes, bits / 8);
+          this->decode_6002rm_(bytes, bits / 8);
+        }
+
+        // reset
+        if (bits >= sizeof(bytes) * 8) {
           bits = 0;
           syncs = 0;
         }
