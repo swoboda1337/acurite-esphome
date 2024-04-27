@@ -101,14 +101,20 @@ These sensors will reset at specific times which is useful for daily, weekly or 
       test_daily:
         source: sensor.acurite_rainfall
         name: AcuRite Rainfall Daily
+        always_available: true
+        periodically_resetting: false
         cycle: daily
       test_weekly:
         source: sensor.acurite_rainfall
         name: AcuRite Rainfall Weekly
+        always_available: true
+        periodically_resetting: false
         cycle: weekly
       test_monthly:
         source: sensor.acurite_rainfall
         name: AcuRite Rainfall Monthly
+        always_available: true
+        periodically_resetting: false
         cycle: monthly
 
 A binary moisture sensor can also be created using a template:
