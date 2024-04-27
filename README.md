@@ -98,19 +98,19 @@ These sensors are window based and will calculate how much rain had fallen withi
 These sensors will reset at specific times which is useful for daily, weekly or monthly:
 
     utility_meter:
-      test_daily:
+      daily_rainfall:
         source: sensor.acurite_rainfall
         name: AcuRite Rainfall Daily
         always_available: true
         periodically_resetting: false
         cycle: daily
-      test_weekly:
+      weekly_rainfall:
         source: sensor.acurite_rainfall
         name: AcuRite Rainfall Weekly
         always_available: true
         periodically_resetting: false
         cycle: weekly
-      test_monthly:
+      monthly_rainfall:
         source: sensor.acurite_rainfall
         name: AcuRite Rainfall Monthly
         always_available: true
