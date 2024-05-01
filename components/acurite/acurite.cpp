@@ -8,7 +8,6 @@ namespace acurite {
 
 static const char *const TAG = "acurite";
 
-#ifdef USE_SENSOR
 void AcuRiteDevice::temperature_value(float value) {
   if (this->temperature_sensor_) {
     // if the new value changed significantly wait for it to be confirmed a 
@@ -62,7 +61,6 @@ void AcuRiteDevice::setup()
     this->preferences_.load(&this->rainfall_state_);
   }
 }
-#endif
 
 bool AcuRite::validate_(uint8_t *data, uint8_t len)
 {
@@ -107,12 +105,10 @@ bool AcuRite::decode_6002rm_(uint8_t *data, uint8_t len) {
   temperature = (temperature - 1000) / 10.0;
   ESP_LOGD(TAG, "Temp sensor: channel %c, id %04x, bat %d, temp %.1f°C, humidity %.1f%%",
            channel, id, battery, temperature, humidity);
-#ifdef USE_SENSOR
   if (this->devices_.count(id) > 0) {
     this->devices_[id]->temperature_value(temperature);
     this->devices_[id]->humidity_value(humidity);
   }
-#endif
   return true;
 }
 
@@ -130,11 +126,9 @@ bool AcuRite::decode_899_(uint8_t *data, uint8_t len) {
   uint32_t count = ((data[4] & 0x7F) << 14) | ((data[5] & 0x7F) << 7) | ((data[6] & 0x7F) << 0);
   ESP_LOGD(TAG, "Rain sensor: channel %c, id %04x, bat %d, count %d", 
            channel, id, battery, count);
-#ifdef USE_SENSOR
   if (this->devices_.count(id) > 0) {
     this->devices_[id]->rainfall_count(count);
   }
-#endif
   return true;
 }
 
@@ -202,12 +196,10 @@ bool AcuRite::on_receive(remote_base::RemoteReceiveData data)
 void AcuRite::setup() {
   ESP_LOGI(TAG, "AcuRite Setup");
 
-#ifdef USE_SENSOR
   // setup devices
   for (auto const& device : this->devices_) {
     device.second->setup();
   }
-#endif
 
   // listen for data
   this->remote_receiver_->register_listener(this);

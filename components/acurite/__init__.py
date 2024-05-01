@@ -7,9 +7,9 @@ from esphome.const import (
     CONF_TIME_ID,
 )
 
-DEPENDENCIES = ["remote_receiver"]
-
 CODEOWNERS = ["@swoboda1337"]
+AUTO_LOAD = ["sensor"]
+DEPENDENCIES = ["remote_receiver"]
 
 CONF_RECEIVER_ID = 'receiver_id'
 

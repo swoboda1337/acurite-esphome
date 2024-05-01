@@ -6,15 +6,11 @@
 #include "esphome/core/component.h"
 #include "esphome/core/preferences.h"
 #include "esphome/components/remote_receiver/remote_receiver.h"
-
-#ifdef USE_SENSOR
 #include "esphome/components/sensor/sensor.h"
-#endif
 
 namespace esphome {
 namespace acurite {
 
-#ifdef USE_SENSOR
 class AcuRiteDevice {
  public:
   AcuRiteDevice(uint16_t id) : id_(id) { }
@@ -41,29 +37,24 @@ class AcuRiteDevice {
   float temperature_last_{1000};
   uint16_t id_{0};
 };
-#endif
 
 class AcuRite : public Component, public remote_base::RemoteReceiverListener { 
  public:
   float get_setup_priority() const override;
   void setup() override;
   bool on_receive(remote_base::RemoteReceiveData data) override;
-  void set_srcrecv(remote_receiver::RemoteReceiverComponent *srcrecv) { this->remote_receiver_ = srcrecv; }
-#ifdef USE_SENSOR
   void add_device(uint16_t id) { devices_[id] = new AcuRiteDevice(id); }
   void add_temperature_sensor(uint16_t id, sensor::Sensor *sensor) { devices_[id]->add_temperature_sensor(sensor); }
   void add_humidity_sensor(uint16_t id, sensor::Sensor *sensor) { devices_[id]->add_humidity_sensor(sensor); }
   void add_rainfall_sensor(uint16_t id, sensor::Sensor *sensor) { devices_[id]->add_rainfall_sensor(sensor); }
-#endif
+  void set_srcrecv(remote_receiver::RemoteReceiverComponent *srcrecv) { this->remote_receiver_ = srcrecv; }
 
  protected:
   remote_receiver::RemoteReceiverComponent *remote_receiver_{nullptr};
   bool decode_6002rm_(uint8_t *data, uint8_t len);
   bool decode_899_(uint8_t *data, uint8_t len);
   bool validate_(uint8_t *data, uint8_t len);
-#ifdef USE_SENSOR
   std::map<uint16_t, AcuRiteDevice*> devices_;
-#endif
 };
 
 }  // namespace acurite
