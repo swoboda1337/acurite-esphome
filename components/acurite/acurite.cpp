@@ -1,6 +1,4 @@
 #include "acurite.h"
-#include "esphome/core/hal.h"
-#include "esphome/core/helpers.h"
 #include "esphome/core/log.h"
 
 namespace esphome {
@@ -142,10 +140,6 @@ bool AcuRite::on_receive(remote_base::RemoteReceiveData data)
   uint32_t syncs{0};
   uint8_t bytes[8];
 
-  if (data.size() < ((7 * 8) * 2 + 4)) {
-    return false;
-  }
-
   for(auto i : data.get_raw_data()) {
     bool isSync = std::abs(acurite_sync - std::abs(i)) < acurite_delta;
     bool isZero = std::abs(acurite_zero - std::abs(i)) < acurite_delta;
@@ -203,10 +197,6 @@ void AcuRite::setup() {
 
   // listen for data
   this->remote_receiver_->register_listener(this);
-}
-
-float AcuRite::get_setup_priority() const { 
-  return setup_priority::LATE; 
 }
 
 }  // namespace acurite

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <map>
-
 #include "esphome/core/gpio.h"
 #include "esphome/core/component.h"
 #include "esphome/core/preferences.h"
@@ -40,7 +39,7 @@ class AcuRiteDevice {
 
 class AcuRite : public Component, public remote_base::RemoteReceiverListener { 
  public:
-  float get_setup_priority() const override;
+  float get_setup_priority() const override { return setup_priority::LATE; }
   void setup() override;
   bool on_receive(remote_base::RemoteReceiveData data) override;
   void add_device(uint16_t id) { devices_[id] = new AcuRiteDevice(id); }
