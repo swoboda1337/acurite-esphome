@@ -4,8 +4,8 @@
 #include "esphome/core/gpio.h"
 #include "esphome/core/component.h"
 #include "esphome/core/preferences.h"
-#include "esphome/components/remote_receiver/remote_receiver.h"
 #include "esphome/components/sensor/sensor.h"
+#include "esphome/components/remote_receiver/remote_receiver.h"
 
 namespace esphome {
 namespace acurite {
@@ -13,13 +13,13 @@ namespace acurite {
 class AcuRiteDevice {
  public:
   AcuRiteDevice(uint16_t id) : id_(id) { }
-  void setup();
   void add_temperature_sensor(sensor::Sensor *sensor) { temperature_sensor_ = sensor; }
   void add_humidity_sensor(sensor::Sensor *sensor) { humidity_sensor_ = sensor; }
   void add_rainfall_sensor(sensor::Sensor *sensor) { rainfall_sensor_ = sensor; }
   void temperature_value(float value);
   void humidity_value(float value);
   void rainfall_count(uint32_t count);
+  void setup();
 
  protected:
   struct RainfallState {

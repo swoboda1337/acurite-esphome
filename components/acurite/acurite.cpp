@@ -8,8 +8,7 @@ static const char *const TAG = "acurite";
 
 void AcuRiteDevice::temperature_value(float value) {
   if (this->temperature_sensor_) {
-    // if the new value changed significantly wait for it to be confirmed a 
-    // second time in case it was corrupted by random bit flips
+    // filter out crc false positives by confirming any large changes in value
     if (fabsf(value - this->temperature_last_) < 1.0) {
       this->temperature_sensor_->publish_state(value);
     }
@@ -19,8 +18,7 @@ void AcuRiteDevice::temperature_value(float value) {
 
 void AcuRiteDevice::humidity_value(float value) {
   if (this->humidity_sensor_) {
-    // if the new value changed significantly wait for it to be confirmed a 
-    // second time in case it was corrupted by random bit flips
+    // filter out crc false positives by confirming any large changes in value
     if (fabsf(value - this->humidity_last_) < 1.0) {
       this->humidity_sensor_->publish_state(value);
     }
@@ -30,9 +28,8 @@ void AcuRiteDevice::humidity_value(float value) {
 
 void AcuRiteDevice::rainfall_count(uint32_t count) {
   if (this->rainfall_sensor_) {
-    // if the new value changed significantly or decreased wait for it to be 
-    // confirmed a second time in case it was corrupted by random bit flips
-    if (count >= this->rainfall_last_ && (count - this->rainfall_last_) < 16) {
+    // filter out crc false positives by confirming any change in value
+    if (count != this->rainfall_last_) {
       if (count != this->rainfall_state_.device) {
         // update rainfall state and save to nvm
         if (count >= this->rainfall_state_.device) {
@@ -140,17 +137,15 @@ bool AcuRite::on_receive(remote_base::RemoteReceiveData data)
   uint32_t syncs{0};
   uint8_t bytes[8];
 
+  // demodulate AcuRite OOK data
   for(auto i : data.get_raw_data()) {
     bool isSync = std::abs(acurite_sync - std::abs(i)) < acurite_delta;
     bool isZero = std::abs(acurite_zero - std::abs(i)) < acurite_delta;
     bool isOne = std::abs(acurite_one - std::abs(i)) < acurite_delta;
     bool level = (i >= 0);
 
-    // validate signal state, only look for two syncs
-    // as the first one can be affected by noise until
-    // the agc adjusts
     if ((isOne || isZero) && syncs > 2) {
-      // detect bit after on is complete
+      // detect bits using on state
       if (level == true) {
         uint8_t idx = bits / 8;
         uint8_t bit = 1 << (7 - (bits & 7));
@@ -161,20 +156,20 @@ bool AcuRite::on_receive(remote_base::RemoteReceiveData data)
         }
         bits += 1;
 
-        // try to decode
         if ((bits & 7) == 0) {
+          // try to decode on whole bytes
           this->decode_899_(bytes, bits / 8);
           this->decode_6002rm_(bytes, bits / 8);
         }
 
-        // reset
         if (bits >= sizeof(bytes) * 8) {
+          // reset if buffer is full
           bits = 0;
           syncs = 0;
         }
       }
     } else if (isSync && bits == 0) {
-      // count sync after off is complete
+      // count sync using off state
       if (level == false) {
         syncs++;
       }
