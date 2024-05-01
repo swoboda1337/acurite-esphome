@@ -29,7 +29,7 @@ void AcuRiteDevice::humidity_value(float value) {
 void AcuRiteDevice::rainfall_count(uint32_t count) {
   if (this->rainfall_sensor_) {
     // filter out crc false positives by confirming any change in value
-    if (count != this->rainfall_last_) {
+    if (count == this->rainfall_last_) {
       if (count != this->rainfall_state_.device) {
         // update rainfall state and save to nvm
         if (count >= this->rainfall_state_.device) {
