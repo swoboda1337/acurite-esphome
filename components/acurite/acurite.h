@@ -42,10 +42,10 @@ class AcuRite : public Component, public remote_base::RemoteReceiverListener {
   float get_setup_priority() const override { return setup_priority::LATE; }
   void setup() override;
   bool on_receive(remote_base::RemoteReceiveData data) override;
-  void add_device(uint16_t id) { devices_[id] = new AcuRiteDevice(id); }
-  void add_temperature_sensor(uint16_t id, sensor::Sensor *sensor) { devices_[id]->add_temperature_sensor(sensor); }
-  void add_humidity_sensor(uint16_t id, sensor::Sensor *sensor) { devices_[id]->add_humidity_sensor(sensor); }
-  void add_rainfall_sensor(uint16_t id, sensor::Sensor *sensor) { devices_[id]->add_rainfall_sensor(sensor); }
+  void add_device(uint16_t id) { this->devices_[id] = new AcuRiteDevice(id); }
+  void add_temperature_sensor(uint16_t id, sensor::Sensor *sensor) { this->devices_[id]->add_temperature_sensor(sensor); }
+  void add_humidity_sensor(uint16_t id, sensor::Sensor *sensor) { this->devices_[id]->add_humidity_sensor(sensor); }
+  void add_rainfall_sensor(uint16_t id, sensor::Sensor *sensor) { this->devices_[id]->add_rainfall_sensor(sensor); }
   void set_srcrecv(remote_receiver::RemoteReceiverComponent *srcrecv) { this->remote_receiver_ = srcrecv; }
 
  protected:
