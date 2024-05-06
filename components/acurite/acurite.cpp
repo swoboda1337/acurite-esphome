@@ -140,27 +140,25 @@ bool AcuRite::on_receive(remote_base::RemoteReceiveData data) {
     bool isZero = std::abs(acurite_zero - std::abs(i)) < acurite_delta;
     bool isOne = std::abs(acurite_one - std::abs(i)) < acurite_delta;
     bool level = (i >= 0);
-
     if ((isOne || isZero) && syncs > 2) {
       // detect bits using on state
       if (level == true) {
-        uint8_t idx = bits / 8;
         uint8_t bit = 1 << (7 - (bits & 7));
         if (isOne) {
-          bytes[idx] |=  bit;
+          bytes[bits / 8] |=  bit;
         } else {
-          bytes[idx] &= ~bit;
+          bytes[bits / 8] &= ~bit;
         }
         bits += 1;
 
+        // try to decode on whole bytes
         if ((bits & 7) == 0) {
-          // try to decode on whole bytes
           this->decode_899_(bytes, bits / 8);
           this->decode_6002rm_(bytes, bits / 8);
         }
 
+        // reset if buffer is full
         if (bits >= sizeof(bytes) * 8) {
-          // reset if buffer is full
           bits = 0;
           syncs = 0;
         }
