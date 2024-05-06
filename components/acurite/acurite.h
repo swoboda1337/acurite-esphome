@@ -1,7 +1,6 @@
 #pragma once
 
 #include <map>
-#include "esphome/core/gpio.h"
 #include "esphome/core/component.h"
 #include "esphome/core/preferences.h"
 #include "esphome/components/sensor/sensor.h"
