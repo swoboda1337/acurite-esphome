@@ -1,7 +1,6 @@
 #pragma once
 
 #include <map>
-#include "esphome/core/component.h"
 #include "esphome/core/preferences.h"
 #include "esphome/components/sensor/sensor.h"
 #include "esphome/components/remote_receiver/remote_receiver.h"
