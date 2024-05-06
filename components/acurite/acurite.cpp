@@ -197,7 +197,6 @@ void AcuRite::setup() {
 
 void AcuRite::dump_config() {
   ESP_LOGCONFIG(TAG, "AcuRite:");
-
   for (auto const& device : this->devices_) {
     device.second->dump_config();
   }
