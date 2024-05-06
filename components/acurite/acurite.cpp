@@ -46,8 +46,7 @@ void AcuRiteDevice::rainfall_count(uint32_t count) {
   }
 }
 
-void AcuRiteDevice::setup()
-{
+void AcuRiteDevice::setup() {
   if (this->rainfall_sensor_) {
     // load rainfall state from nvm, rainfall value needs to always increase even 
     // after a power reset on the esp or sensor
@@ -57,8 +56,7 @@ void AcuRiteDevice::setup()
   }
 }
 
-void AcuRiteDevice::dump_config()
-{
+void AcuRiteDevice::dump_config() {
   ESP_LOGCONFIG(TAG, "  Device: 0x%04x", this->id_);
   if (this->rainfall_sensor_) {
     LOG_SENSOR("    ", "Rainfall", this->rainfall_sensor_);
@@ -71,8 +69,7 @@ void AcuRiteDevice::dump_config()
   }
 }
 
-bool AcuRite::validate_(uint8_t *data, uint8_t len)
-{
+bool AcuRite::validate_(uint8_t *data, uint8_t len) {
   // checksum
   uint8_t sum = 0;
   for (int32_t i = 0; i < len - 1; i++) {
@@ -129,8 +126,7 @@ void AcuRite::decode_899_(uint8_t *data, uint8_t len) {
   }
 }
 
-bool AcuRite::on_receive(remote_base::RemoteReceiveData data)
-{
+bool AcuRite::on_receive(remote_base::RemoteReceiveData data) {
   static const int32_t acurite_sync{600};
   static const int32_t acurite_one{400};
   static const int32_t acurite_zero{200};
