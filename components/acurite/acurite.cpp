@@ -57,6 +57,19 @@ void AcuRiteDevice::setup()
   }
 }
 
+void AcuRiteDevice::dump_config()
+{
+  if (this->rainfall_sensor_) {
+    LOG_SENSOR("  ", "Rainfall", this->rainfall_sensor_);
+  }
+  if (this->temperature_sensor_) {
+    LOG_SENSOR("  ", "Temperature", this->temperature_sensor_);
+  }
+  if (this->humidity_sensor_) {
+    LOG_SENSOR("  ", "Humidity", this->humidity_sensor_);
+  }
+}
+
 bool AcuRite::validate_(uint8_t *data, uint8_t len)
 {
   // checksum
@@ -80,51 +93,39 @@ bool AcuRite::validate_(uint8_t *data, uint8_t len)
       return false;
     }
   }
-
   return true;
 }
 
-bool AcuRite::decode_6002rm_(uint8_t *data, uint8_t len) {
-  // check length and validate
-  if (len != 7 || this->validate_(data, 7) == false) {
-    return false;
+void AcuRite::decode_6002rm_(uint8_t *data, uint8_t len) {
+  if (len == 7 && this->validate_(data, 7)) {
+    static const char channel_lut[4] = {'C', 'X', 'B', 'A'};
+    char channel = channel_lut[data[0] >> 6];
+    uint16_t id = ((data[0] & 0x3F) << 8) | (data[1] & 0xFF);
+    uint16_t battery = (data[2] >> 6) & 1;
+    float humidity = data[3] & 0x7F;
+    float temperature = ((float)(((data[4] & 0x0F) << 7) | (data[5] & 0x7F)) - 1000) / 10.0;
+    ESP_LOGD(TAG, "Temp sensor: channel %c, id %04x, bat %d, temp %.1f°C, humidity %.1f%%",
+             channel, id, battery, temperature, humidity);
+    if (this->devices_.count(id) > 0) {
+      this->devices_[id]->temperature_value(temperature);
+      this->devices_[id]->humidity_value(humidity);
+    }
   }
-
-  // decode data and update sensor
-  static const char channel_lut[4] = {'C', 'X', 'B', 'A'};
-  char channel = channel_lut[data[0] >> 6];
-  uint16_t id = ((data[0] & 0x3F) << 8) | (data[1] & 0xFF);
-  uint16_t battery = (data[2] >> 6) & 1;
-  float humidity = data[3] & 0x7F;
-  float temperature = ((data[4] & 0x0F) << 7) | (data[5] & 0x7F);
-  temperature = (temperature - 1000) / 10.0;
-  ESP_LOGD(TAG, "Temp sensor: channel %c, id %04x, bat %d, temp %.1f°C, humidity %.1f%%",
-           channel, id, battery, temperature, humidity);
-  if (this->devices_.count(id) > 0) {
-    this->devices_[id]->temperature_value(temperature);
-    this->devices_[id]->humidity_value(humidity);
-  }
-  return true;
 }
 
-bool AcuRite::decode_899_(uint8_t *data, uint8_t len) {
-  // check length and validate
-  if (len != 8 || this->validate_(data, 8) == false) {
-    return false;
+void AcuRite::decode_899_(uint8_t *data, uint8_t len) {
+  if (len == 8 && this->validate_(data, 8)) {
+    static const char channel_lut[4] = {'A', 'B', 'C', 'X'};
+    char channel = channel_lut[data[0] >> 6];
+    uint16_t id = ((data[0] & 0x3F) << 8) | (data[1] & 0xFF);
+    uint16_t battery = (data[2] >> 6) & 1;
+    uint32_t count = ((data[4] & 0x7F) << 14) | ((data[5] & 0x7F) << 7) | ((data[6] & 0x7F) << 0);
+    ESP_LOGD(TAG, "Rain sensor: channel %c, id %04x, bat %d, count %d", 
+             channel, id, battery, count);
+    if (this->devices_.count(id) > 0) {
+      this->devices_[id]->rainfall_count(count);
+    }
   }
-
-  // decode data and update sensor
-  static const char channel_lut[4] = {'A', 'B', 'C', 'X'};
-  char channel = channel_lut[data[0] >> 6];
-  uint16_t id = ((data[0] & 0x3F) << 8) | (data[1] & 0xFF);
-  uint16_t battery = (data[2] >> 6) & 1;
-  uint32_t count = ((data[4] & 0x7F) << 14) | ((data[5] & 0x7F) << 7) | ((data[6] & 0x7F) << 0);
-  ESP_LOGD(TAG, "Rain sensor: channel %c, id %04x, bat %d, count %d", 
-           channel, id, battery, count);
-  if (this->devices_.count(id) > 0) {
-    this->devices_[id]->rainfall_count(count);
-  }
-  return true;
 }
 
 bool AcuRite::on_receive(remote_base::RemoteReceiveData data)
@@ -192,6 +193,14 @@ void AcuRite::setup() {
 
   // listen for data
   this->remote_receiver_->register_listener(this);
+}
+
+void AcuRite::dump_config() {
+  ESP_LOGCONFIG(TAG, "AcuRite:");
+
+  for (auto const& device : this->devices_) {
+    device.second->dump_config();
+  }
 }
 
 }  // namespace acurite
