@@ -178,14 +178,10 @@ bool AcuRite::on_receive(remote_base::RemoteReceiveData data) {
 }
 
 void AcuRite::setup() {
-  ESP_LOGI(TAG, "AcuRite Setup");
-
-  // setup devices
+  ESP_LOGCONFIG(TAG, "Setting up AcuRite...");
   for (auto const& device : this->devices_) {
     device.second->setup();
   }
-
-  // listen for data
   this->remote_receiver_->register_listener(this);
 }
 
