@@ -47,8 +47,7 @@ void AcuRiteDevice::rainfall_count(uint32_t count) {
 
 void AcuRiteDevice::setup() {
   if (this->rainfall_sensor_) {
-    // load rainfall state from nvm, rainfall value needs to always increase even 
-    // after a power reset on the esp or sensor
+    // load state from nvm, count needs to increase even after a reset
     uint32_t type = fnv1_hash(std::string("AcuRite: ") + format_hex(this->id_));
     this->preferences_ = global_preferences->make_preference<RainfallState>(type);
     this->preferences_.load(&this->rainfall_state_);

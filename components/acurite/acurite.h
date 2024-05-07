@@ -10,7 +10,7 @@ namespace acurite {
 
 class AcuRiteDevice {
  public:
-  AcuRiteDevice(uint16_t id) : id_(id) { }
+  AcuRiteDevice(uint16_t id) { id_ = id; }
   void add_temperature_sensor(sensor::Sensor *sensor) { temperature_sensor_ = sensor; }
   void add_humidity_sensor(sensor::Sensor *sensor) { humidity_sensor_ = sensor; }
   void add_rainfall_sensor(sensor::Sensor *sensor) { rainfall_sensor_ = sensor; }
