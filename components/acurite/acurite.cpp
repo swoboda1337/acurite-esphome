@@ -133,6 +133,8 @@ bool AcuRite::on_receive(remote_base::RemoteReceiveData data) {
   uint32_t syncs{0};
   uint8_t bytes[8];
 
+  ESP_LOGV(TAG, "Received raw data with length %d", data.get_raw_data().size());
+
   // demodulate AcuRite OOK data
   for(auto i : data.get_raw_data()) {
     bool isSync = std::abs(acurite_sync - std::abs(i)) < acurite_delta;
