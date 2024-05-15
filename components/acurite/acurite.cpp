@@ -86,6 +86,15 @@ bool AcuRite::validate_(uint8_t *data, uint8_t len) {
   return true;
 }
 
+void AcuRite::decode_6045m_(uint8_t *data, uint8_t len) {
+  if (len == 9 && this->validate_(data, 9)) {
+      char channel = channel_lut[data[0] >> 6];
+      uint16_t id = ((data[0] & 0x3F) << 8) | (data[1] & 0xFF);
+      uint16_t battery = (data[2] >> 6) & 1;
+      ESP_LOGD(TAG, "Lightning:   channel %c, id %04x, bat %d", channel, id, battery);
+  }
+}
+
 void AcuRite::decode_6002rm_(uint8_t *data, uint8_t len) {
   if (len == 7 && this->validate_(data, 7)) {
     static const char channel_lut[4] = {'C', 'X', 'B', 'A'};
@@ -125,7 +134,7 @@ bool AcuRite::on_receive(remote_base::RemoteReceiveData data) {
   static const int32_t acurite_delta{100};
   uint32_t bits{0};
   uint32_t syncs{0};
-  uint8_t bytes[8];
+  uint8_t bytes[9];
 
   ESP_LOGV(TAG, "Received raw data with length %d", data.get_raw_data().size());
 
@@ -150,6 +159,7 @@ bool AcuRite::on_receive(remote_base::RemoteReceiveData data) {
         if ((bits & 7) == 0) {
           this->decode_899_(bytes, bits / 8);
           this->decode_6002rm_(bytes, bits / 8);
+          this->decode_6045m_(bytes, bits / 8);
         }
 
         // reset if buffer is full
