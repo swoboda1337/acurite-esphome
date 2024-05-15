@@ -49,7 +49,6 @@ class AcuRite : public Component, public remote_base::RemoteReceiverListener {
   void set_srcrecv(remote_receiver::RemoteReceiverComponent *srcrecv) { this->remote_receiver_ = srcrecv; }
 
  protected:
-  void decode_6045m_(uint8_t *data, uint8_t len);
   void decode_6002rm_(uint8_t *data, uint8_t len);
   void decode_899_(uint8_t *data, uint8_t len);
   bool validate_(uint8_t *data, uint8_t len);
