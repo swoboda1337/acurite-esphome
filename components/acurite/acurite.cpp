@@ -57,8 +57,8 @@ void AcuRiteDevice::setup() {
 void AcuRiteDevice::dump_config() {
   ESP_LOGCONFIG(TAG, "  Device: 0x%04x", this->id_);
   LOG_SENSOR("    ", "Rainfall", this->rainfall_sensor_);
-  LOG_SENSOR("    ", "Temperature", this->temperature_sensor_);
   LOG_SENSOR("    ", "Humidity", this->humidity_sensor_);
+  LOG_SENSOR("    ", "Temperature", this->temperature_sensor_);
 }
 
 bool AcuRite::validate_(uint8_t *data, uint8_t len) {
