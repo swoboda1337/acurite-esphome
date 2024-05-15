@@ -2,7 +2,9 @@ ESPHome AcuRite OOK signal decoder, allowing for an easy integration of 433 MHz 
 
 The AcuRite component can be run without any sensors configured. Data received from all sensors will still be logged, this can be done to determine ids before setting up the sensor yaml.
 
-A 433 MHz board that provides OOK data over a GPIO is required for this component to work. This component has been tested with the LILYGO LoRa32 V2.1_1.6 board using my [SX127x](https://github.com/swoboda1337/sx127x-esphome) component.
+A 433 MHz board that provides OOK data over a GPIO is required for this component to work. This component has been tested with the LILYGO LoRa32 V2.1_1.6 board using my [SX127x](https://github.com/swoboda1337/sx127x-esphome) component. 
+
+Note the small 433 MHz antennas that come with these boards work fine but are not ideal. The antenna gain is really poor and it’s too close to the Wi-Fi antenna which can cause glitches. A proper antenna like the Siretta Tango 9 has better range and doesn’t glitch when Wi-Fi transmits.
 
 Example yaml to use in esphome device config:
     
