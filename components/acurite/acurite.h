@@ -54,6 +54,8 @@ class AcuRite : public Component, public remote_base::RemoteReceiverListener {
   void add_temperature_sensor(uint16_t id, sensor::Sensor *sensor) { this->devices_[id]->add_temperature_sensor(sensor); }
   void add_humidity_sensor(uint16_t id, sensor::Sensor *sensor) { this->devices_[id]->add_humidity_sensor(sensor); }
   void add_rainfall_sensor(uint16_t id, sensor::Sensor *sensor) { this->devices_[id]->add_rainfall_sensor(sensor); }
+  void add_lightning_sensor(uint16_t id, sensor::Sensor *sensor) { this->devices_[id]->add_lightning_sensor(sensor); }
+  void add_distance_sensor(uint16_t id, sensor::Sensor *sensor) { this->devices_[id]->add_distance_sensor(sensor); }
   void set_srcrecv(remote_receiver::RemoteReceiverComponent *srcrecv) { this->remote_receiver_ = srcrecv; }
 
  protected:
