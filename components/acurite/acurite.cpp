@@ -116,7 +116,7 @@ void AcuRite::decode_592tx_(uint8_t *data, uint8_t len) {
     uint16_t battery = (data[2] >> 6) & 1;
     float humidity = data[3] & 0x7F;
     float temperature = ((float)(((data[4] & 0x0F) << 7) | (data[5] & 0x7F)) - 1000) / 10.0;
-    ESP_LOGD(TAG, "Temperature sensor: ch %c, id %04x, bat %d, temp %.1f, rh %.1f",
+    ESP_LOGD(TAG, "Temperature: ch %c, id %04x, bat %d, temp %.1f, rh %.1f",
              channel, id, battery, temperature, humidity);
     if (this->devices_.count(id) > 0) {
       this->devices_[id]->temperature_value(temperature);
@@ -132,7 +132,7 @@ void AcuRite::decode_899tx_(uint8_t *data, uint8_t len) {
     uint16_t id = ((data[0] & 0x3F) << 8) | (data[1] & 0xFF);
     uint16_t battery = (data[2] >> 6) & 1;
     uint32_t count = ((data[4] & 0x7F) << 14) | ((data[5] & 0x7F) << 7) | ((data[6] & 0x7F) << 0);
-    ESP_LOGD(TAG, "Rainfall collector: ch %c, id %04x, bat %d, count %d", 
+    ESP_LOGD(TAG, "Rain Gauge:  ch %c, id %04x, bat %d, count %d", 
              channel, id, battery, count);
     if (this->devices_.count(id) > 0) {
       this->devices_[id]->rainfall_count(count);
@@ -149,9 +149,9 @@ void AcuRite::decode_6045m_(uint8_t *data, uint8_t len) {
     float humidity = data[3] & 0x7F;
     float temperature = ((float)(((data[4] & 0x1F) << 7) | (data[5] & 0x7F)) - 1800) * 0.5 / 9.0;
     float distance = (float)(data[7] & 0x1F) * 1.60934;
-    uint16_t count = (data[6] << 1) | ((data[7] >> 6) & 1);
+    uint16_t count = ((data[6] & 0x7F) << 1) | ((data[7] >> 6) & 1);
     uint16_t rfi = (data[7] >> 5) & 1;
-    ESP_LOGD(TAG, "Lightning detector: ch %c, id %04x, bat %d, temp %.1f, rh %.1f, count %d, dist %.1f, rfi %d",
+    ESP_LOGD(TAG, "Lightning:   ch %c, id %04x, bat %d, temp %.1f, rh %.1f, count %d, dist %.1f, rfi %d",
              channel, id, battery, temperature, humidity, count, distance, rfi);
     if (this->devices_.count(id) > 0) {
       this->devices_[id]->temperature_value(temperature);
