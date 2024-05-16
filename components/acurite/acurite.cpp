@@ -84,6 +84,8 @@ void AcuRiteDevice::dump_config() {
 }
 
 bool AcuRite::validate_(uint8_t *data, uint8_t len) {
+  ESP_LOGV(TAG, "Validating data: %s", format_hex(data, len).c_str());
+
   // checksum
   uint8_t sum = 0;
   for (int32_t i = 0; i < len - 1; i++) {
@@ -109,7 +111,7 @@ bool AcuRite::validate_(uint8_t *data, uint8_t len) {
 }
 
 void AcuRite::decode_592tx_(uint8_t *data, uint8_t len) {
-  if (len == 7 && this->validate_(data, 7)) {
+  if (len == 7 && (data[2] & 0x3F) == 0x04 && this->validate_(data, 7)) {
     static const char channel_lut[4] = {'C', 'X', 'B', 'A'};
     char channel = channel_lut[data[0] >> 6];
     uint16_t id = ((data[0] & 0x3F) << 8) | (data[1] & 0xFF);
@@ -126,7 +128,7 @@ void AcuRite::decode_592tx_(uint8_t *data, uint8_t len) {
 }
 
 void AcuRite::decode_899tx_(uint8_t *data, uint8_t len) {
-  if (len == 8 && this->validate_(data, 8)) {
+  if (len == 8 && (data[2] & 0x3F) == 0x30 && this->validate_(data, 8)) {
     static const char channel_lut[4] = {'A', 'B', 'C', 'X'};
     char channel = channel_lut[data[0] >> 6];
     uint16_t id = ((data[0] & 0x3F) << 8) | (data[1] & 0xFF);
@@ -141,7 +143,7 @@ void AcuRite::decode_899tx_(uint8_t *data, uint8_t len) {
 }
 
 void AcuRite::decode_6045m_(uint8_t *data, uint8_t len) {
-  if (len == 9 && this->validate_(data, 9)) {
+  if (len == 9 && (data[2] & 0x3F) == 0x2F && this->validate_(data, 9)) {
     static const char channel_lut[4] = {'C', 'X', 'B', 'A'};
     char channel = channel_lut[data[0] >> 6];
     uint16_t id = ((data[0] & 0x3F) << 8) | (data[1] & 0xFF);
