@@ -25,6 +25,26 @@ void AcuRiteDevice::humidity_value(float value) {
   }
 }
 
+void AcuRiteDevice::distance_value(float value) {
+  if (this->distance_sensor_) {
+    // filter out crc false positives by confirming any large changes in value
+    if (fabsf(value - this->distance_last_) < 1.0) {
+      this->distance_sensor_->publish_state(value);
+    }
+    this->distance_last_ = value;
+  }
+}
+
+void AcuRiteDevice::lightning_count(uint32_t count) {
+  if (this->lightning_sensor_) {
+    // filter out crc false positives by confirming any change in value
+    if (count == this->lightning_last_) {
+      this->lightning_sensor_->publish_state(count);
+    }
+    this->lightning_last_ = count;
+  }
+}
+
 void AcuRiteDevice::rainfall_count(uint32_t count) {
   if (this->rainfall_sensor_) {
     // filter out crc false positives by confirming any change in value
@@ -55,7 +75,7 @@ void AcuRiteDevice::setup() {
 }
 
 void AcuRiteDevice::dump_config() {
-  ESP_LOGCONFIG(TAG, "  Device: 0x%04x", this->id_);
+  ESP_LOGCONFIG(TAG, "  0x%04x:", this->id_);
   LOG_SENSOR("    ", "Rainfall", this->rainfall_sensor_);
   LOG_SENSOR("    ", "Humidity", this->humidity_sensor_);
   LOG_SENSOR("    ", "Temperature", this->temperature_sensor_);
@@ -86,7 +106,7 @@ bool AcuRite::validate_(uint8_t *data, uint8_t len) {
   return true;
 }
 
-void AcuRite::decode_6002rm_(uint8_t *data, uint8_t len) {
+void AcuRite::decode_592tx_(uint8_t *data, uint8_t len) {
   if (len == 7 && this->validate_(data, 7)) {
     static const char channel_lut[4] = {'C', 'X', 'B', 'A'};
     char channel = channel_lut[data[0] >> 6];
@@ -94,7 +114,7 @@ void AcuRite::decode_6002rm_(uint8_t *data, uint8_t len) {
     uint16_t battery = (data[2] >> 6) & 1;
     float humidity = data[3] & 0x7F;
     float temperature = ((float)(((data[4] & 0x0F) << 7) | (data[5] & 0x7F)) - 1000) / 10.0;
-    ESP_LOGD(TAG, "Temp sensor: channel %c, id %04x, bat %d, temp %.1f°C, humidity %.1f%%",
+    ESP_LOGD(TAG, "Temperature sensor: ch %c, id %04x, bat %d, temp %.1f, rh %.1f",
              channel, id, battery, temperature, humidity);
     if (this->devices_.count(id) > 0) {
       this->devices_[id]->temperature_value(temperature);
@@ -103,17 +123,39 @@ void AcuRite::decode_6002rm_(uint8_t *data, uint8_t len) {
   }
 }
 
-void AcuRite::decode_899_(uint8_t *data, uint8_t len) {
+void AcuRite::decode_899tx_(uint8_t *data, uint8_t len) {
   if (len == 8 && this->validate_(data, 8)) {
     static const char channel_lut[4] = {'A', 'B', 'C', 'X'};
     char channel = channel_lut[data[0] >> 6];
     uint16_t id = ((data[0] & 0x3F) << 8) | (data[1] & 0xFF);
     uint16_t battery = (data[2] >> 6) & 1;
     uint32_t count = ((data[4] & 0x7F) << 14) | ((data[5] & 0x7F) << 7) | ((data[6] & 0x7F) << 0);
-    ESP_LOGD(TAG, "Rain sensor: channel %c, id %04x, bat %d, count %d", 
+    ESP_LOGD(TAG, "Rainfall collector: ch %c, id %04x, bat %d, count %d", 
              channel, id, battery, count);
     if (this->devices_.count(id) > 0) {
       this->devices_[id]->rainfall_count(count);
+    }
+  }
+}
+
+void AcuRite::decode_6045m_(uint8_t *data, uint8_t len) {
+  if (len == 9 && this->validate_(data, 9)) {
+    static const char channel_lut[4] = {'C', 'X', 'B', 'A'};
+    char channel = channel_lut[data[0] >> 6];
+    uint16_t id = ((data[0] & 0x3F) << 8) | (data[1] & 0xFF);
+    uint16_t battery = (data[2] >> 6) & 1;
+    float humidity = data[3] & 0x7F;
+    float temperature = ((float)(((data[4] & 0x1F) << 7) | (data[5] & 0x7F)) - 1800) * 0.5 / 9.0;
+    uint32_t count = (data[6] << 1) | ((data[7] >> 6) & 1);
+    float distance = (float)(data[7] & 0x1F) * 1.60934;
+    uint16_t rfi = (data[7] >> 5) & 1;
+    ESP_LOGD(TAG, "Lightning detector: ch %c, id %04x, bat %d, temp %.1f, rh %.1f, count %d, dist %.1f, rfi %d",
+             channel, id, battery, temperature, humidity, count, distance, rfi);
+    if (this->devices_.count(id) > 0) {
+      this->devices_[id]->temperature_value(temperature);
+      this->devices_[id]->humidity_value(humidity);
+      this->devices_[id]->lightning_count(count);
+      this->devices_[id]->distance_value(distance);
     }
   }
 }
@@ -125,7 +167,7 @@ bool AcuRite::on_receive(remote_base::RemoteReceiveData data) {
   static const int32_t acurite_delta{100};
   uint32_t bits{0};
   uint32_t syncs{0};
-  uint8_t bytes[8];
+  uint8_t bytes[9];
 
   ESP_LOGV(TAG, "Received raw data with length %d", data.get_raw_data().size());
 
@@ -148,8 +190,9 @@ bool AcuRite::on_receive(remote_base::RemoteReceiveData data) {
 
         // try to decode on whole bytes
         if ((bits & 7) == 0) {
-          this->decode_899_(bytes, bits / 8);
-          this->decode_6002rm_(bytes, bits / 8);
+          this->decode_592tx_(bytes, bits / 8);
+          this->decode_899tx_(bytes, bits / 8);
+          this->decode_6045m_(bytes, bits / 8);
         }
 
         // reset if buffer is full

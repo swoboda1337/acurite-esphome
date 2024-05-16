@@ -6,13 +6,18 @@ from esphome.components import time
 from esphome.const import (
     CONF_TEMPERATURE,
     CONF_HUMIDITY,
+    CONF_DISTANCE,
     DEVICE_CLASS_TEMPERATURE,
     DEVICE_CLASS_HUMIDITY,
     DEVICE_CLASS_PRECIPITATION,
+    DEVICE_CLASS_DISTANCE,
     STATE_CLASS_MEASUREMENT,
     STATE_CLASS_TOTAL_INCREASING,
+    STATE_CLASS_TOTAL,
     UNIT_CELSIUS,
     UNIT_PERCENT,
+    UNIT_KILOMETER,
+    UNIT_EMPTY,
 )
 from . import AcuRite
 
@@ -22,6 +27,7 @@ CONF_ACURITE_ID = 'acurite_id'
 CONF_DEVICES = 'devices'
 CONF_DEVICE = 'device'
 CONF_RAIN = 'rain'
+CONF_LIGHTNING = 'lightning'
 UNIT_MILLIMETER = "mm"
 
 DEVICE_SCHEMA = cv.Schema(
@@ -44,6 +50,18 @@ DEVICE_SCHEMA = cv.Schema(
             accuracy_decimals=1,
             device_class=DEVICE_CLASS_PRECIPITATION,
             state_class=STATE_CLASS_TOTAL_INCREASING,
+        ),
+        cv.Optional(CONF_LIGHTNING): sensor.sensor_schema(
+            unit_of_measurement=UNIT_EMPTY,
+            accuracy_decimals=1,
+            device_class=DEVICE_CLASS_PRECIPITATION,
+            state_class=STATE_CLASS_TOTAL,
+        ),
+        cv.Optional(CONF_DISTANCE): sensor.sensor_schema(
+            unit_of_measurement=UNIT_KILOMETER,
+            accuracy_decimals=1,
+            device_class=DEVICE_CLASS_DISTANCE,
+            state_class=STATE_CLASS_MEASUREMENT,
         ),
     }
 )
@@ -71,3 +89,9 @@ async def to_code(config):
             if CONF_RAIN in device_cfg:
                 sens = await sensor.new_sensor(device_cfg[CONF_RAIN])
                 cg.add(parent.add_rainfall_sensor(device_cfg[CONF_DEVICE], sens))
+            if CONF_LIGHTNING in device_cfg:
+                sens = await sensor.new_sensor(device_cfg[CONF_LIGHTNING])
+                cg.add(parent.add_lightning_sensor(device_cfg[CONF_DEVICE], sens))
+            if CONF_DISTANCE in device_cfg:
+                sens = await sensor.new_sensor(device_cfg[CONF_DISTANCE])
+                cg.add(parent.add_distance_sensor(device_cfg[CONF_DEVICE], sens))

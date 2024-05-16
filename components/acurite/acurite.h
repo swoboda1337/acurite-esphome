@@ -14,9 +14,13 @@ class AcuRiteDevice {
   void add_temperature_sensor(sensor::Sensor *sensor) { temperature_sensor_ = sensor; }
   void add_humidity_sensor(sensor::Sensor *sensor) { humidity_sensor_ = sensor; }
   void add_rainfall_sensor(sensor::Sensor *sensor) { rainfall_sensor_ = sensor; }
+  void add_lightning_sensor(sensor::Sensor *sensor) { lightning_sensor_ = sensor; }
+  void add_distance_sensor(sensor::Sensor *sensor) { distance_sensor_ = sensor; }
   void temperature_value(float value);
   void humidity_value(float value);
   void rainfall_count(uint32_t count);
+  void lightning_count(uint32_t count);
+  void distance_value(float value);
   void dump_config();
   void setup();
 
@@ -30,7 +34,11 @@ class AcuRiteDevice {
   sensor::Sensor *rainfall_sensor_{nullptr};
   sensor::Sensor *humidity_sensor_{nullptr};
   sensor::Sensor *temperature_sensor_{nullptr};
+  sensor::Sensor *lightning_sensor_{nullptr};
+  sensor::Sensor *distance_sensor_{nullptr};
   uint32_t rainfall_last_{0xFFFFFFFF};
+  uint32_t lightning_last_{0xFFFFFFFF};
+  float distance_last_{1000};
   float humidity_last_{1000};
   float temperature_last_{1000};
   uint16_t id_{0};
@@ -49,8 +57,9 @@ class AcuRite : public Component, public remote_base::RemoteReceiverListener {
   void set_srcrecv(remote_receiver::RemoteReceiverComponent *srcrecv) { this->remote_receiver_ = srcrecv; }
 
  protected:
-  void decode_6002rm_(uint8_t *data, uint8_t len);
-  void decode_899_(uint8_t *data, uint8_t len);
+  void decode_592tx_(uint8_t *data, uint8_t len);
+  void decode_899tx_(uint8_t *data, uint8_t len);
+  void decode_6045m_(uint8_t *data, uint8_t len);
   bool validate_(uint8_t *data, uint8_t len);
   remote_receiver::RemoteReceiverComponent *remote_receiver_{nullptr};
   std::map<uint16_t, AcuRiteDevice*> devices_;
