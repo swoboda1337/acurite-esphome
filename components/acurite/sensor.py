@@ -51,17 +51,17 @@ DEVICE_SCHEMA = cv.Schema(
             device_class=DEVICE_CLASS_PRECIPITATION,
             state_class=STATE_CLASS_TOTAL_INCREASING,
         ),
-        cv.Optional(CONF_LIGHTNING): sensor.sensor_schema(
-            unit_of_measurement=UNIT_EMPTY,
-            accuracy_decimals=0,
-            device_class=DEVICE_CLASS_PRECIPITATION,
-            state_class=STATE_CLASS_TOTAL,
-        ),
         cv.Optional(CONF_DISTANCE): sensor.sensor_schema(
             unit_of_measurement=UNIT_KILOMETER,
             accuracy_decimals=1,
             device_class=DEVICE_CLASS_DISTANCE,
             state_class=STATE_CLASS_MEASUREMENT,
+        ),
+        cv.Optional(CONF_LIGHTNING): sensor.sensor_schema(
+            unit_of_measurement=UNIT_EMPTY,
+            accuracy_decimals=0,
+            device_class=DEVICE_CLASS_PRECIPITATION,
+            state_class=STATE_CLASS_TOTAL,
         ),
     }
 )

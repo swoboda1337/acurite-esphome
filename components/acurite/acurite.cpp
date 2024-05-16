@@ -76,11 +76,11 @@ void AcuRiteDevice::setup() {
 
 void AcuRiteDevice::dump_config() {
   ESP_LOGCONFIG(TAG, "  0x%04x:", this->id_);
-  LOG_SENSOR("    ", "Rainfall", this->rainfall_sensor_);
-  LOG_SENSOR("    ", "Humidity", this->humidity_sensor_);
   LOG_SENSOR("    ", "Temperature", this->temperature_sensor_);
-  LOG_SENSOR("    ", "Lightning", this->lightning_sensor_);
+  LOG_SENSOR("    ", "Humidity", this->humidity_sensor_);
+  LOG_SENSOR("    ", "Rainfall", this->rainfall_sensor_);
   LOG_SENSOR("    ", "Distance", this->distance_sensor_);
+  LOG_SENSOR("    ", "Lightning", this->lightning_sensor_);
 }
 
 bool AcuRite::validate_(uint8_t *data, uint8_t len) {
@@ -148,16 +148,16 @@ void AcuRite::decode_6045m_(uint8_t *data, uint8_t len) {
     uint16_t battery = (data[2] >> 6) & 1;
     float humidity = data[3] & 0x7F;
     float temperature = ((float)(((data[4] & 0x1F) << 7) | (data[5] & 0x7F)) - 1800) * 0.5 / 9.0;
-    uint32_t count = (data[6] << 1) | ((data[7] >> 6) & 1);
     float distance = (float)(data[7] & 0x1F) * 1.60934;
+    uint16_t count = (data[6] << 1) | ((data[7] >> 6) & 1);
     uint16_t rfi = (data[7] >> 5) & 1;
     ESP_LOGD(TAG, "Lightning detector: ch %c, id %04x, bat %d, temp %.1f, rh %.1f, count %d, dist %.1f, rfi %d",
              channel, id, battery, temperature, humidity, count, distance, rfi);
     if (this->devices_.count(id) > 0) {
       this->devices_[id]->temperature_value(temperature);
       this->devices_[id]->humidity_value(humidity);
-      this->devices_[id]->lightning_count(count);
       this->devices_[id]->distance_value(distance);
+      this->devices_[id]->lightning_count(count);
     }
   }
 }
