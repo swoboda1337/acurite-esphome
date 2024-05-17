@@ -49,8 +49,8 @@ void AcuRiteDevice::rainfall_count(uint32_t count) {
   if (this->rainfall_sensor_) {
     // filter out crc false positives by confirming any change in value
     if (count == this->rainfall_last_) {
+      // update rainfall state and save to nvm
       if (count != this->rainfall_state_.device) {
-        // update rainfall state and save to nvm
         if (count >= this->rainfall_state_.device) {
           this->rainfall_state_.total += count - this->rainfall_state_.device;
         } else {
@@ -100,9 +100,9 @@ bool AcuRite::validate_(uint8_t *data, uint8_t len) {
   for (int32_t i = 2; i < len - 1; i++) {
     uint8_t sum = 0;
     for (int32_t b = 0; b < 8; b++) {
-      sum ^= (data[i] >> b) & 1;
+      sum ^= data[i] >> b;
     }
-    if (sum != 0) {
+    if ((sum & 1) != 0) {
       ESP_LOGV(TAG, "Parity failure on byte %d", i);
       return false;
     }
@@ -165,31 +165,23 @@ void AcuRite::decode_6045m_(uint8_t *data, uint8_t len) {
 }
 
 bool AcuRite::on_receive(remote_base::RemoteReceiveData data) {
-  static const int32_t acurite_sync{600};
-  static const int32_t acurite_one{400};
-  static const int32_t acurite_zero{200};
-  static const int32_t acurite_delta{100};
-  uint32_t bits{0};
-  uint32_t syncs{0};
+  uint32_t syncs = 0;
+  uint32_t bits = 0;
   uint8_t bytes[9];
 
-  ESP_LOGV(TAG, "Received raw data with length %d", data.get_raw_data().size());
+  ESP_LOGV(TAG, "Received raw data with length %d", data.size());
 
   // demodulate AcuRite OOK data
   for(auto i : data.get_raw_data()) {
-    bool isSync = std::abs(acurite_sync - std::abs(i)) < acurite_delta;
-    bool isZero = std::abs(acurite_zero - std::abs(i)) < acurite_delta;
-    bool isOne = std::abs(acurite_one - std::abs(i)) < acurite_delta;
+    bool isSync = std::abs(600 - std::abs(i)) < 100;
+    bool isZero = std::abs(200 - std::abs(i)) < 100;
+    bool isOne = std::abs(400 - std::abs(i)) < 100;
     bool level = (i >= 0);
     if ((isOne || isZero) && syncs > 2) {
-      // detect bits using on state
       if (level == true) {
-        uint8_t bit = 1 << (7 - (bits & 7));
-        if (isOne) {
-          bytes[bits / 8] |=  bit;
-        } else {
-          bytes[bits / 8] &= ~bit;
-        }
+        // detect bits using on state
+        bytes[bits / 8] <<= 1;
+        bytes[bits / 8] |= isOne ? 1 : 0;
         bits += 1;
 
         // try to decode on whole bytes
