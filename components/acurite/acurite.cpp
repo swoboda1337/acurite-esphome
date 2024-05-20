@@ -144,13 +144,16 @@ void AcuRite::decode_899tx_(uint8_t *data, uint8_t len) {
 
 void AcuRite::decode_6045m_(uint8_t *data, uint8_t len) {
   if (len == 9 && (data[2] & 0x3F) == 0x2F && this->validate_(data, 9)) {
+    static const int8_t distance_lut[32] = {2, 2, 2, 2, 5, 6, 6, 8, 10, 10, 12, 12, 
+                                            14, 14, 14, 17, 17, 20, 20, 20, 24, 24, 
+                                            27, 27, 31, 31, 31, 34, 37, 37, 40, 40};
     static const char channel_lut[4] = {'C', 'X', 'B', 'A'};
     char channel = channel_lut[data[0] >> 6];
     uint16_t id = ((data[0] & 0x3F) << 8) | (data[1] & 0xFF);
     uint16_t battery = (data[2] >> 6) & 1;
     float humidity = data[3] & 0x7F;
     float temperature = ((float)(((data[4] & 0x1F) << 7) | (data[5] & 0x7F)) - 1800) * 0.5 / 9.0;
-    float distance = (float)(data[7] & 0x1F) * 1.60934;
+    float distance = distance_lut[data[7] & 0x1F];
     uint16_t count = ((data[6] & 0x7F) << 1) | ((data[7] >> 6) & 1);
     uint16_t rfi = (data[7] >> 5) & 1;
     ESP_LOGD(TAG, "Lightning:   ch %c, id %04x, bat %d, temp %.1f, rh %.1f, count %d, dist %.1f, rfi %d",
