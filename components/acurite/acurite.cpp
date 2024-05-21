@@ -152,7 +152,7 @@ void AcuRite::decode_6045m_(uint8_t *data, uint8_t len) {
     uint16_t id = ((data[0] & 0x3F) << 8) | (data[1] & 0xFF);
     uint16_t battery = (data[2] >> 6) & 1;
     float humidity = data[3] & 0x7F;
-    float temperature = ((float)(((data[4] & 0x1F) << 7) | (data[5] & 0x7F)) - 1800) * 0.5 / 9.0;
+    float temperature = ((float)(((data[4] & 0x1F) << 7) | (data[5] & 0x7F)) - 1800) * 0.1 * 5.0 / 9.0;
     float distance = distance_lut[data[7] & 0x1F];
     uint16_t count = ((data[6] & 0x7F) << 1) | ((data[7] >> 6) & 1);
     uint16_t rfi = (data[7] >> 5) & 1;
