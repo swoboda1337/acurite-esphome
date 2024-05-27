@@ -11,6 +11,7 @@ from esphome.const import (
     DEVICE_CLASS_HUMIDITY,
     DEVICE_CLASS_PRECIPITATION,
     DEVICE_CLASS_DISTANCE,
+    DEVICE_CLASS_EMPTY,
     STATE_CLASS_MEASUREMENT,
     STATE_CLASS_TOTAL_INCREASING,
     STATE_CLASS_TOTAL,
@@ -60,7 +61,7 @@ DEVICE_SCHEMA = cv.Schema(
         cv.Optional(CONF_LIGHTNING): sensor.sensor_schema(
             unit_of_measurement=UNIT_EMPTY,
             accuracy_decimals=0,
-            device_class=DEVICE_CLASS_PRECIPITATION,
+            device_class=DEVICE_CLASS_EMPTY,
             state_class=STATE_CLASS_TOTAL,
         ),
     }
