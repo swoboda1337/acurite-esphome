@@ -161,8 +161,8 @@ void AcuRite::decode_6045m_(uint8_t *data, uint8_t len) {
     if (this->devices_.count(id) > 0) {
       this->devices_[id]->temperature_value(temperature);
       this->devices_[id]->humidity_value(humidity);
-      this->devices_[id]->distance_value(distance);
       this->devices_[id]->lightning_count(count);
+      this->devices_[id]->distance_value(distance);
     }
   }
 }
