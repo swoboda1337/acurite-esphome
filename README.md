@@ -139,3 +139,54 @@ These sensors will reset at specific times which is useful for daily, weekly or 
 A binary moisture sensor can also be created using a template:
 
     {{states('sensor.acurite_rainfall_15min')|float > 0}}
+
+For lightning detection the following example sensors that can be added to Home Assistant. These sensors will create a daily counter, daily closest distance and most recent distance. If there has been no strike today both closest and last will show 40km (max distance):
+
+    utility_meter:
+      daily_lightning:
+        source: sensor.lightning_strikes
+        name: "Lightning Strikes Daily"
+        always_available: true
+        periodically_resetting: true
+        cron: "0 0 * * *"
+
+    template:
+      - trigger:
+          - platform: time
+            at: '00:00:00'
+          - platform: state
+            entity_id: sensor.lightning_distance
+        sensor:
+          - name: "Lightning Distance Last"
+            device_class: distance
+            unit_of_measurement: "km"
+            state: >
+                {% if trigger.platform == 'time' %}
+                    {{ float(40) }}
+                {% else %}
+                    {% if states('sensor.lightning_strikes_daily') | float(0) | float > 0 %}
+                        {{ states('sensor.lightning_distance') }}
+                    {% else %}
+                        {{ float(40) }}
+                    {% endif %}
+                {% endif %}
+      - trigger:
+          - platform: time
+            at: '00:00:00'
+          - platform: state
+            entity_id: sensor.lightning_distance
+        sensor:
+          - name: "Lightning Distance Closest"
+            device_class: distance
+            unit_of_measurement: "km"
+            state: >
+                {% if trigger.platform == 'time' %}
+                    {{ float(40) }}
+                {% else %}
+                    {% if states('sensor.lightning_strikes_daily') | float(0) | float > 0 %}
+                        {{ [states('sensor.lightning_distance') | float(40), this.state | float(40)] | min }}
+                    {% else %}
+                        {{ float(40) }}
+                    {% endif %}
+                {% endif %}
+
