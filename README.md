@@ -1,4 +1,4 @@
-ESPHome AcuRite OOK signal decoder, allowing for an easy integration of 433 MHz AcuRite weather sensors into Home Assistant.
+ESPHome AcuRite OOK signal decoder, allowing for an easy integration of 433 MHz AcuRite weather sensors into Home Assistant. At the moment the following devices are supported: temperature / humidity sensor, rain gauge and lightning detector. Support for additional sensors can added if someone is available to test the changes. 
 
 The AcuRite component can be run without any sensors configured. Data received from all sensors will still be logged, this can be done to determine ids before setting up the sensor yaml.
 
@@ -7,7 +7,7 @@ A 433 MHz board that provides OOK data over a GPIO is required for this componen
 Note the small 433 MHz antennas that come with these boards work fine but are not ideal. The antenna gain is really poor and it’s too close to the Wi-Fi antenna which can cause glitches. A proper antenna like the Siretta Tango 9 has better range and doesn’t glitch when Wi-Fi transmits.
 
 Example yaml to use in esphome device config:
-    
+
     external_components:
       - source:
           type: git
@@ -137,5 +137,5 @@ These sensors will reset at specific times which is useful for daily, weekly or 
         cycle: monthly
 
 A binary moisture sensor can also be created using a template:
-            
+
     {{states('sensor.acurite_rainfall_15min')|float > 0}}
