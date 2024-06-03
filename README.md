@@ -140,7 +140,7 @@ A binary moisture sensor can also be created using a template:
 
     {{states('sensor.acurite_rainfall_15min')|float > 0}}
 
-For lightning detection the following example sensors that can be added to Home Assistant. These sensors will create a daily counter, daily closest distance and most recent distance. If there has been no strike today both closest and last will show 40km (max distance):
+For lightning detection the following example sensors that can be added to Home Assistant. These sensors will create a daily counter, daily closest distance, most recent distance and a binary sensor if lightning has been detected in the last thirty minutes. If there has been no strike today both closest and last will show 40km (max distance):
 
     utility_meter:
       daily_lightning:
@@ -189,4 +189,17 @@ For lightning detection the following example sensors that can be added to Home 
                         {{ float(40) }}
                     {% endif %}
                 {% endif %}
+
+    binary_sensor:
+      - platform: trend
+        sensors:
+          lightning_active:
+            friendly_name: Lightning Active
+            entity_id: sensor.lightning_strikes
+            device_class: power
+            sample_duration: 1800
+            min_gradient: 0.0001
+            min_samples: 2
+            max_samples: 30
+
 
