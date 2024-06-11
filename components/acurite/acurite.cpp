@@ -5,6 +5,16 @@ namespace acurite {
 
 static const char *const TAG = "acurite";
 
+void AcuRiteDevice::wind_speed_value(float value) {
+  if (this->wind_speed_sensor_) {
+    // filter out crc false positives by confirming any large changes in value
+    if (fabsf(value - this->wind_speed_last_) < 1.0) {
+      this->wind_speed_sensor_->publish_state(value);
+    }
+    this->wind_speed_last_ = value;
+  }
+}
+
 void AcuRiteDevice::temperature_value(float value) {
   if (this->temperature_sensor_) {
     // filter out crc false positives by confirming any large changes in value
@@ -83,7 +93,7 @@ void AcuRiteDevice::dump_config() {
   LOG_SENSOR("    ", "Lightning", this->lightning_sensor_);
 }
 
-bool AcuRite::validate_(uint8_t *data, uint8_t len) {
+bool AcuRite::validate_(uint8_t *data, uint8_t len, bool parity) {
   ESP_LOGV(TAG, "Validating data: %s", format_hex(data, len).c_str());
 
   // checksum
@@ -97,21 +107,23 @@ bool AcuRite::validate_(uint8_t *data, uint8_t len) {
   }
 
   // parity (excludes id and crc)
-  for (int32_t i = 2; i < len - 1; i++) {
-    uint8_t sum = 0;
-    for (int32_t b = 0; b < 8; b++) {
-      sum ^= data[i] >> b;
-    }
-    if ((sum & 1) != 0) {
-      ESP_LOGV(TAG, "Parity failure on byte %d", i);
-      return false;
+  if (parity) {
+    for (int32_t i = 2; i < len - 1; i++) {
+      uint8_t sum = 0;
+      for (int32_t b = 0; b < 8; b++) {
+        sum ^= data[i] >> b;
+      }
+      if ((sum & 1) != 0) {
+        ESP_LOGV(TAG, "Parity failure on byte %d", i);
+        return false;
+      }
     }
   }
   return true;
 }
 
-void AcuRite::decode_592tx_(uint8_t *data, uint8_t len) {
-  if (len == 7 && (data[2] & 0x3F) == 0x04 && this->validate_(data, 7)) {
+void AcuRite::decode_temperature_(uint8_t *data, uint8_t len) {
+  if (len == 7 && (data[2] & 0x3F) == 0x04 && this->validate_(data, 7, true)) {
     static const char channel_lut[4] = {'C', 'X', 'B', 'A'};
     char channel = channel_lut[data[0] >> 6];
     uint16_t id = ((data[0] & 0x3F) << 8) | (data[1] & 0xFF);
@@ -127,14 +139,14 @@ void AcuRite::decode_592tx_(uint8_t *data, uint8_t len) {
   }
 }
 
-void AcuRite::decode_899tx_(uint8_t *data, uint8_t len) {
-  if (len == 8 && (data[2] & 0x3F) == 0x30 && this->validate_(data, 8)) {
+void AcuRite::decode_rainfall_(uint8_t *data, uint8_t len) {
+  if (len == 8 && (data[2] & 0x3F) == 0x30 && this->validate_(data, 8, true)) {
     static const char channel_lut[4] = {'A', 'B', 'C', 'X'};
     char channel = channel_lut[data[0] >> 6];
     uint16_t id = ((data[0] & 0x3F) << 8) | (data[1] & 0xFF);
     uint16_t battery = (data[2] >> 6) & 1;
     uint32_t count = ((data[4] & 0x7F) << 14) | ((data[5] & 0x7F) << 7) | ((data[6] & 0x7F) << 0);
-    ESP_LOGD(TAG, "Rain Gauge:  ch %c, id %04x, bat %d, count %d", 
+    ESP_LOGD(TAG, "Rainfall:    ch %c, id %04x, bat %d, count %d", 
              channel, id, battery, count);
     if (this->devices_.count(id) > 0) {
       this->devices_[id]->rainfall_count(count);
@@ -142,8 +154,8 @@ void AcuRite::decode_899tx_(uint8_t *data, uint8_t len) {
   }
 }
 
-void AcuRite::decode_6045m_(uint8_t *data, uint8_t len) {
-  if (len == 9 && (data[2] & 0x3F) == 0x2F && this->validate_(data, 9)) {
+void AcuRite::decode_lightning_(uint8_t *data, uint8_t len) {
+  if (len == 9 && (data[2] & 0x3F) == 0x2F && this->validate_(data, 9, true)) {
     static const int8_t distance_lut[32] = {2, 2, 2, 2, 5, 6, 6, 8, 10, 10, 12, 12, 
                                             14, 14, 14, 17, 17, 20, 20, 20, 24, 24, 
                                             27, 27, 31, 31, 31, 34, 37, 37, 40, 40};
@@ -163,6 +175,25 @@ void AcuRite::decode_6045m_(uint8_t *data, uint8_t len) {
       this->devices_[id]->humidity_value(humidity);
       this->devices_[id]->lightning_count(count);
       this->devices_[id]->distance_value(distance);
+    }
+  }
+}
+
+void AcuRite::decode_3in1_(uint8_t *data, uint8_t len) {
+  if (len == 8 && (data[2] & 0x3F) == 0x20 && this->validate_(data, 8, false)) {
+    static const char channel_lut[4] = {'C', 'X', 'B', 'A'};
+    char channel = channel_lut[data[0] >> 6];
+    uint16_t id = ((data[0] & 0x3F) << 8) | (data[1] & 0xFF);
+    uint16_t battery = (data[2] >> 6) & 1;
+    float humidity = data[3] & 0x7F;
+    float temperature = ((float)(((data[4] & 0x1F) << 7) | (data[5] & 0x7F)) - 1800) * 0.1 * 5.0 / 9.0;
+    float speed = (float)(data[6] & 0x7F) * 2.54902f;  // doesn't match My AcuRite exactly but its close 
+    ESP_LOGD(TAG, "3-in-1:      ch %c, id %04x, bat %d, temp %.1f, rh %.1f, speed %.1f",
+             channel, id, battery, temperature, humidity, speed);
+    if (this->devices_.count(id) > 0) {
+      this->devices_[id]->temperature_value(temperature);
+      this->devices_[id]->humidity_value(humidity);
+      this->devices_[id]->wind_speed_value(speed);
     }
   }
 }
@@ -189,9 +220,10 @@ bool AcuRite::on_receive(remote_base::RemoteReceiveData data) {
 
         // try to decode on whole bytes
         if ((bits & 7) == 0) {
-          this->decode_592tx_(bytes, bits / 8);
-          this->decode_899tx_(bytes, bits / 8);
-          this->decode_6045m_(bytes, bits / 8);
+          this->decode_temperature_(bytes, bits / 8);
+          this->decode_rainfall_(bytes, bits / 8);
+          this->decode_lightning_(bytes, bits / 8);
+          this->decode_3in1_(bytes, bits / 8);
         }
 
         // reset if buffer is full

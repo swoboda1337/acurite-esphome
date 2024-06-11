@@ -12,12 +12,14 @@ from esphome.const import (
     DEVICE_CLASS_PRECIPITATION,
     DEVICE_CLASS_DISTANCE,
     DEVICE_CLASS_EMPTY,
+    DEVICE_CLASS_SPEED,
     STATE_CLASS_MEASUREMENT,
     STATE_CLASS_TOTAL_INCREASING,
     STATE_CLASS_TOTAL,
     UNIT_CELSIUS,
     UNIT_PERCENT,
     UNIT_KILOMETER,
+    UNIT_KILOMETER_PER_HOUR,
     UNIT_EMPTY,
 )
 from . import AcuRite
@@ -28,12 +30,19 @@ CONF_ACURITE_ID = 'acurite_id'
 CONF_DEVICES = 'devices'
 CONF_DEVICE = 'device'
 CONF_RAIN = 'rain'
+CONF_WIND_SPEED = 'wind_speed'
 CONF_LIGHTNING = 'lightning'
 UNIT_MILLIMETER = "mm"
 
 DEVICE_SCHEMA = cv.Schema(
     {
         cv.Required(CONF_DEVICE): cv.hex_int_range(max=0x3FFF),
+        cv.Optional(CONF_WIND_SPEED): sensor.sensor_schema(
+            unit_of_measurement=UNIT_KILOMETER_PER_HOUR,
+            accuracy_decimals=1,
+            device_class=DEVICE_CLASS_SPEED,
+            state_class=STATE_CLASS_MEASUREMENT,
+        ),
         cv.Optional(CONF_TEMPERATURE): sensor.sensor_schema(
             unit_of_measurement=UNIT_CELSIUS,
             accuracy_decimals=1,
@@ -81,6 +90,9 @@ async def to_code(config):
     if devices_cfg := config.get(CONF_DEVICES):
         for device_cfg in devices_cfg:
             cg.add(parent.add_device(device_cfg[CONF_DEVICE]))
+            if CONF_WIND_SPEED in device_cfg:
+                sens = await sensor.new_sensor(device_cfg[CONF_WIND_SPEED])
+                cg.add(parent.add_wind_speed_sensor(device_cfg[CONF_DEVICE], sens))
             if CONF_TEMPERATURE in device_cfg:
                 sens = await sensor.new_sensor(device_cfg[CONF_TEMPERATURE])
                 cg.add(parent.add_temperature_sensor(device_cfg[CONF_DEVICE], sens))
