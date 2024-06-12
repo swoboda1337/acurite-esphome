@@ -86,6 +86,7 @@ void AcuRiteDevice::setup() {
 
 void AcuRiteDevice::dump_config() {
   ESP_LOGCONFIG(TAG, "  0x%04x:", this->id_);
+  LOG_SENSOR("    ", "Wind Speed", this->wind_speed_sensor_);
   LOG_SENSOR("    ", "Temperature", this->temperature_sensor_);
   LOG_SENSOR("    ", "Humidity", this->humidity_sensor_);
   LOG_SENSOR("    ", "Rainfall", this->rainfall_sensor_);
