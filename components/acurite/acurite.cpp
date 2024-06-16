@@ -94,7 +94,7 @@ void AcuRiteDevice::dump_config() {
   LOG_SENSOR("    ", "Lightning", this->lightning_sensor_);
 }
 
-bool AcuRite::validate_(uint8_t *data, uint8_t len, bool parity) {
+bool AcuRite::validate_(uint8_t *data, uint8_t len, int8_t except) {
   ESP_LOGV(TAG, "Validating data: %s", format_hex(data, len).c_str());
 
   // checksum
@@ -108,23 +108,21 @@ bool AcuRite::validate_(uint8_t *data, uint8_t len, bool parity) {
   }
 
   // parity (excludes id and crc)
-  if (parity) {
-    for (int32_t i = 2; i < len - 1; i++) {
-      uint8_t sum = 0;
-      for (int32_t b = 0; b < 8; b++) {
-        sum ^= data[i] >> b;
-      }
-      if ((sum & 1) != 0) {
-        ESP_LOGV(TAG, "Parity failure on byte %d", i);
-        return false;
-      }
+  for (int32_t i = 2; i < len - 1; i++) {
+    uint8_t sum = 0;
+    for (int32_t b = 0; b < 8; b++) {
+      sum ^= data[i] >> b;
+    }
+    if ((sum & 1) != 0 && i != except) {
+      ESP_LOGV(TAG, "Parity failure on byte %d", i);
+      return false;
     }
   }
   return true;
 }
 
 void AcuRite::decode_temperature_(uint8_t *data, uint8_t len) {
-  if (len == 7 && (data[2] & 0x3F) == 0x04 && this->validate_(data, 7, true)) {
+  if (len == 7 && (data[2] & 0x3F) == 0x04 && this->validate_(data, 7, -1)) {
     static const char channel_lut[4] = {'C', 'X', 'B', 'A'};
     char channel = channel_lut[data[0] >> 6];
     uint16_t id = ((data[0] & 0x3F) << 8) | (data[1] & 0xFF);
@@ -141,7 +139,7 @@ void AcuRite::decode_temperature_(uint8_t *data, uint8_t len) {
 }
 
 void AcuRite::decode_rainfall_(uint8_t *data, uint8_t len) {
-  if (len == 8 && (data[2] & 0x3F) == 0x30 && this->validate_(data, 8, true)) {
+  if (len == 8 && (data[2] & 0x3F) == 0x30 && this->validate_(data, 8, -1)) {
     static const char channel_lut[4] = {'A', 'B', 'C', 'X'};
     char channel = channel_lut[data[0] >> 6];
     uint16_t id = ((data[0] & 0x3F) << 8) | (data[1] & 0xFF);
@@ -156,7 +154,7 @@ void AcuRite::decode_rainfall_(uint8_t *data, uint8_t len) {
 }
 
 void AcuRite::decode_lightning_(uint8_t *data, uint8_t len) {
-  if (len == 9 && (data[2] & 0x3F) == 0x2F && this->validate_(data, 9, true)) {
+  if (len == 9 && (data[2] & 0x3F) == 0x2F && this->validate_(data, 9, -1)) {
     static const int8_t distance_lut[32] = {2, 2, 2, 2, 5, 6, 6, 8, 10, 10, 12, 12, 
                                             14, 14, 14, 17, 17, 20, 20, 20, 24, 24, 
                                             27, 27, 31, 31, 31, 34, 37, 37, 40, 40};
@@ -181,7 +179,7 @@ void AcuRite::decode_lightning_(uint8_t *data, uint8_t len) {
 }
 
 void AcuRite::decode_notos_(uint8_t *data, uint8_t len) {
-  if (len == 8 && (data[2] & 0x3F) == 0x20 && this->validate_(data, 8, false)) {
+  if (len == 8 && (data[2] & 0x3F) == 0x20 && this->validate_(data, 8, 6)) {
     static const char channel_lut[4] = {'C', 'X', 'B', 'A'};
     char channel = channel_lut[data[0] >> 6];
     uint16_t id = ((data[0] & 0x3F) << 8) | (data[1] & 0xFF);
