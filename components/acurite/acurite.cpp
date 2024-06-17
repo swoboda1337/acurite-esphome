@@ -153,6 +153,8 @@ void AcuRite::decode_rainfall_(uint8_t *data, uint8_t len) {
 }
 
 void AcuRite::decode_lightning_(uint8_t *data, uint8_t len) {
+  // the lightning distance lookup table was taken from the AS3935 datasheet which can be 
+  // found here: https://www.mouser.com/datasheet/2/588/ams_AS3935_Datasheet_EN_v5-1214568.pdf
   if (len == 9 && (data[2] & 0x3F) == 0x2F && this->validate_(data, 9, -1)) {
     static const int8_t distance_lut[32] = {2, 2, 2, 2, 5, 6, 6, 8, 10, 10, 12, 12, 
                                             14, 14, 14, 17, 17, 20, 20, 20, 24, 24, 
