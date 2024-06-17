@@ -7,8 +7,10 @@ static const char *const TAG = "acurite";
 
 void AcuRiteDevice::wind_speed_value(float value) {
   if (this->wind_speed_sensor_) {
-    // do not confirm wind values as they change rapidly and are only sent twice
-    this->wind_speed_sensor_->publish_state(value);
+    // do not confirm wind values as they can change rapidly
+    if (value < 160.0) {
+      this->wind_speed_sensor_->publish_state(value);
+    }
   }
 }
 
