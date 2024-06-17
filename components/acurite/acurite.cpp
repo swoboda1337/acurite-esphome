@@ -7,11 +7,8 @@ static const char *const TAG = "acurite";
 
 void AcuRiteDevice::wind_speed_value(float value) {
   if (this->wind_speed_sensor_) {
-    // filter out crc false positives by confirming any large changes in value
-    if (fabsf(value - this->wind_speed_last_) < 1.0) {
-      this->wind_speed_sensor_->publish_state(value);
-    }
-    this->wind_speed_last_ = value;
+    // do not confirm wind values as they change rapidly and are only sent twice
+    this->wind_speed_sensor_->publish_state(value);
   }
 }
 
@@ -179,6 +176,10 @@ void AcuRite::decode_lightning_(uint8_t *data, uint8_t len) {
 }
 
 void AcuRite::decode_notos_(uint8_t *data, uint8_t len) {
+  // the wind speed conversion value was derived by sending the raw values 0-78 to 
+  // my acurite, the resulting data showed some strange nonlinearity in a few spots, 
+  // the conversion here will match my acurite most of the time and should be more 
+  // accurate when it doesn't
   if (len == 8 && (data[2] & 0x3F) == 0x20 && this->validate_(data, 8, 6)) {
     static const char channel_lut[4] = {'C', 'X', 'B', 'A'};
     char channel = channel_lut[data[0] >> 6];
@@ -186,7 +187,7 @@ void AcuRite::decode_notos_(uint8_t *data, uint8_t len) {
     uint16_t battery = (data[2] >> 6) & 1;
     float humidity = data[3] & 0x7F;
     float temperature = ((float)(((data[4] & 0x1F) << 7) | (data[5] & 0x7F)) - 1800) * 0.1 * 5.0 / 9.0;
-    float speed = (float)(data[6] & 0x7F) * 2.54902f;  // doesn't match My AcuRite exactly but its close 
+    float speed = (float)(data[6] & 0x7F) * 2.5734f; 
     ESP_LOGD(TAG, "Notos 3in1:  ch %c, id %04x, bat %d, temp %.1f, rh %.1f, speed %.1f",
              channel, id, battery, temperature, humidity, speed);
     if (this->devices_.count(id) > 0) {

@@ -44,7 +44,6 @@ class AcuRiteDevice {
   float distance_last_{1000};
   float humidity_last_{1000};
   float temperature_last_{1000};
-  float wind_speed_last_{1000};
   uint16_t id_{0};
 };
 
