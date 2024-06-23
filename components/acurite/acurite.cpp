@@ -179,6 +179,15 @@ void AcuRite::decode_lightning_(uint8_t *data, uint8_t len) {
   }
 }
 
+void AcuRite::decode_atlas_(uint8_t *data, uint8_t len) {
+  if (len == 10 && this->validate_(data, 10, -1)) {
+    uint8_t msg = data[2] & 0x3F;
+    if (msg == 0x05 || msg == 0x06 || msg == 0x07 || msg == 0x25 || msg == 0x26 || msg == 0x27) {
+      ESP_LOGD(TAG, "Atlas 7in1:  raw %s", format_hex(data, 10).c_str());
+    }
+  }
+}
+
 void AcuRite::decode_notos_(uint8_t *data, uint8_t len) {
   // the wind speed conversion value was derived by sending the raw values 0-78 to 
   // my acurite, the resulting data showed some strange nonlinearity in a few spots, 
@@ -202,10 +211,19 @@ void AcuRite::decode_notos_(uint8_t *data, uint8_t len) {
   }
 }
 
+void AcuRite::decode_iris_(uint8_t *data, uint8_t len) {
+  if (len == 8 && this->validate_(data, 8, -1)) {
+    uint8_t msg = data[2] & 0x3F;
+    if (msg == 0x31 || msg == 0x38) {
+      ESP_LOGD(TAG, "Iris 5in1:   raw %s", format_hex(data, 8).c_str());
+    }
+  }
+}
+
 bool AcuRite::on_receive(remote_base::RemoteReceiveData data) {
   uint32_t syncs = 0;
   uint32_t bits = 0;
-  uint8_t bytes[9];
+  uint8_t bytes[10];
 
   ESP_LOGV(TAG, "Received raw data with length %d", data.size());
 
@@ -227,7 +245,9 @@ bool AcuRite::on_receive(remote_base::RemoteReceiveData data) {
           this->decode_temperature_(bytes, bits / 8);
           this->decode_rainfall_(bytes, bits / 8);
           this->decode_lightning_(bytes, bits / 8);
+          this->decode_atlas_(bytes, bits / 8);
           this->decode_notos_(bytes, bits / 8);
+          this->decode_iris_(bytes, bits / 8);
         }
 
         // reset if buffer is full

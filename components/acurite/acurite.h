@@ -66,7 +66,9 @@ class AcuRite : public Component, public remote_base::RemoteReceiverListener {
   void decode_temperature_(uint8_t *data, uint8_t len);
   void decode_rainfall_(uint8_t *data, uint8_t len);
   void decode_lightning_(uint8_t *data, uint8_t len);
+  void decode_atlas_(uint8_t *data, uint8_t len);
   void decode_notos_(uint8_t *data, uint8_t len);
+  void decode_iris_(uint8_t *data, uint8_t len);
   bool validate_(uint8_t *data, uint8_t len, int8_t except);
   remote_receiver::RemoteReceiverComponent *remote_receiver_{nullptr};
   std::map<uint16_t, AcuRiteDevice*> devices_;
