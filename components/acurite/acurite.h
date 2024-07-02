@@ -17,12 +17,13 @@ class AcuRiteDevice {
   void add_distance_sensor(sensor::Sensor *sensor) { distance_sensor_ = sensor; }
   void add_rainfall_sensor(sensor::Sensor *sensor) { rainfall_sensor_ = sensor; }
   void add_lightning_sensor(sensor::Sensor *sensor) { lightning_sensor_ = sensor; }
-  void wind_speed_value(float value);
-  void temperature_value(float value);
-  void humidity_value(float value);
-  void distance_value(float value);
-  void rainfall_count(uint32_t count);
-  void lightning_count(uint32_t count);
+  void update_wind_speed(float value);
+  void update_wind_direction(float value);
+  void update_temperature(float value);
+  void update_humidity(float value);
+  void update_distance(float value);
+  void update_rainfall(uint32_t count);
+  void update_lightning(uint32_t count);
   void dump_config();
   void setup();
 
@@ -33,6 +34,7 @@ class AcuRiteDevice {
   };
   ESPPreferenceObject preferences_;
   RainfallState rainfall_state_;
+  sensor::Sensor *wind_direction_sensor_{nullptr};
   sensor::Sensor *wind_speed_sensor_{nullptr};
   sensor::Sensor *temperature_sensor_{nullptr};
   sensor::Sensor *humidity_sensor_{nullptr};
