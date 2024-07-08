@@ -11,14 +11,15 @@ namespace acurite {
 class AcuRiteDevice {
  public:
   AcuRiteDevice(uint16_t id) { id_ = id; }
-  void add_wind_speed_sensor(sensor::Sensor *sensor) { wind_speed_sensor_ = sensor; }
+  void add_speed_sensor(sensor::Sensor *sensor) { speed_sensor_ = sensor; }
+  void add_direction_sensor(sensor::Sensor *sensor) { direction_sensor_ = sensor; }
   void add_temperature_sensor(sensor::Sensor *sensor) { temperature_sensor_ = sensor; }
   void add_humidity_sensor(sensor::Sensor *sensor) { humidity_sensor_ = sensor; }
   void add_distance_sensor(sensor::Sensor *sensor) { distance_sensor_ = sensor; }
   void add_rainfall_sensor(sensor::Sensor *sensor) { rainfall_sensor_ = sensor; }
   void add_lightning_sensor(sensor::Sensor *sensor) { lightning_sensor_ = sensor; }
-  void update_wind_speed(float value);
-  void update_wind_direction(float value);
+  void update_speed(float value);
+  void update_direction(float value);
   void update_temperature(float value);
   void update_humidity(float value);
   void update_distance(float value);
@@ -34,8 +35,8 @@ class AcuRiteDevice {
   };
   ESPPreferenceObject preferences_;
   RainfallState rainfall_state_;
-  sensor::Sensor *wind_direction_sensor_{nullptr};
-  sensor::Sensor *wind_speed_sensor_{nullptr};
+  sensor::Sensor *direction_sensor_{nullptr};
+  sensor::Sensor *speed_sensor_{nullptr};
   sensor::Sensor *temperature_sensor_{nullptr};
   sensor::Sensor *humidity_sensor_{nullptr};
   sensor::Sensor *distance_sensor_{nullptr};
@@ -56,7 +57,8 @@ class AcuRite : public Component, public remote_base::RemoteReceiverListener {
   void dump_config() override;
   bool on_receive(remote_base::RemoteReceiveData data) override;
   void add_device(uint16_t id) { this->devices_[id] = new AcuRiteDevice(id); }
-  void add_wind_speed_sensor(uint16_t id, sensor::Sensor *sensor) { this->devices_[id]->add_wind_speed_sensor(sensor); }
+  void add_direction_sensor(uint16_t id, sensor::Sensor *sensor) { this->devices_[id]->add_direction_sensor(sensor); }
+  void add_speed_sensor(uint16_t id, sensor::Sensor *sensor) { this->devices_[id]->add_speed_sensor(sensor); }
   void add_temperature_sensor(uint16_t id, sensor::Sensor *sensor) { this->devices_[id]->add_temperature_sensor(sensor); }
   void add_humidity_sensor(uint16_t id, sensor::Sensor *sensor) { this->devices_[id]->add_humidity_sensor(sensor); }
   void add_rainfall_sensor(uint16_t id, sensor::Sensor *sensor) { this->devices_[id]->add_rainfall_sensor(sensor); }

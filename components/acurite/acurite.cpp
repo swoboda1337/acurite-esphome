@@ -5,20 +5,20 @@ namespace acurite {
 
 static const char *const TAG = "acurite";
 
-void AcuRiteDevice::update_wind_direction(float value) {
-  if (this->wind_direction_sensor_) {
+void AcuRiteDevice::update_direction(float value) {
+  if (this->direction_sensor_) {
     // do not confirm wind values as they can change rapidly
     if (value >= 0.0f && value < 360.0f) {
-      this->wind_direction_sensor_->publish_state(value);
+      this->direction_sensor_->publish_state(value);
     }
   }
 }
 
-void AcuRiteDevice::update_wind_speed(float value) {
-  if (this->wind_speed_sensor_) {
+void AcuRiteDevice::update_speed(float value) {
+  if (this->speed_sensor_) {
     // do not confirm wind values as they can change rapidly
     if (value >= 0.0f && value < 200.0f) {
-      this->wind_speed_sensor_->publish_state(value);
+      this->speed_sensor_->publish_state(value);
     }
   }
 }
@@ -94,8 +94,8 @@ void AcuRiteDevice::setup() {
 
 void AcuRiteDevice::dump_config() {
   ESP_LOGCONFIG(TAG, "  0x%04x:", this->id_);
-  LOG_SENSOR("    ", "Wind Speed", this->wind_speed_sensor_);
-  LOG_SENSOR("    ", "Wind Direction", this->wind_direction_sensor_);
+  LOG_SENSOR("    ", "Speed", this->speed_sensor_);
+  LOG_SENSOR("    ", "Direction", this->direction_sensor_);
   LOG_SENSOR("    ", "Temperature", this->temperature_sensor_);
   LOG_SENSOR("    ", "Humidity", this->humidity_sensor_);
   LOG_SENSOR("    ", "Rainfall", this->rainfall_sensor_);
@@ -214,7 +214,7 @@ void AcuRite::decode_notos_(uint8_t *data, uint8_t len) {
     if (this->devices_.count(id) > 0) {
       this->devices_[id]->update_temperature(temp);
       this->devices_[id]->update_humidity(humidity);
-      this->devices_[id]->update_wind_speed(speed);
+      this->devices_[id]->update_speed(speed);
     }
   }
 }
@@ -238,8 +238,8 @@ void AcuRite::decode_iris_(uint8_t *data, uint8_t len) {
         ESP_LOGD(TAG, "Iris 5in1:   ch %c, id %04x, bat %d, speed %.1f, dir %.1f, rain %d",
                  channel, id, battery, speed, direction, count);
         if (this->devices_.count(id) > 0) {
-          this->devices_[id]->update_wind_speed(speed);
-          this->devices_[id]->update_wind_direction(direction);
+          this->devices_[id]->update_speed(speed);
+          this->devices_[id]->update_direction(direction);
           this->devices_[id]->update_rainfall(count);
         }
       } else {
@@ -248,7 +248,7 @@ void AcuRite::decode_iris_(uint8_t *data, uint8_t len) {
         ESP_LOGD(TAG, "Iris 5in1:   ch %c, id %04x, bat %d, speed %.1f, temp %.1f, rh %.1f",
                  channel, id, battery, speed, temp, humidity);
         if (this->devices_.count(id) > 0) {
-          this->devices_[id]->update_wind_speed(speed);
+          this->devices_[id]->update_speed(speed);
           this->devices_[id]->update_temperature(temp);
           this->devices_[id]->update_humidity(humidity);
         }

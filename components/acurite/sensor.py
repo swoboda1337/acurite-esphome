@@ -31,21 +31,21 @@ CONF_ACURITE_ID = 'acurite_id'
 CONF_DEVICES = 'devices'
 CONF_DEVICE = 'device'
 CONF_RAIN = 'rain'
-CONF_WIND_SPEED = 'wind_speed'
-CONF_WIND_DIRECTION = 'wind_direction'
+CONF_SPEED = 'speed'
+CONF_DIRECTION = 'direction'
 CONF_LIGHTNING = 'lightning'
 UNIT_MILLIMETER = "mm"
 
 DEVICE_SCHEMA = cv.Schema(
     {
         cv.Required(CONF_DEVICE): cv.hex_int_range(max=0x3FFF),
-        cv.Optional(CONF_WIND_SPEED): sensor.sensor_schema(
+        cv.Optional(CONF_SPEED): sensor.sensor_schema(
             unit_of_measurement=UNIT_KILOMETER_PER_HOUR,
             accuracy_decimals=1,
             device_class=DEVICE_CLASS_WIND_SPEED,
             state_class=STATE_CLASS_MEASUREMENT,
         ),
-        cv.Optional(CONF_WIND_DIRECTION): sensor.sensor_schema(
+        cv.Optional(CONF_DIRECTION): sensor.sensor_schema(
             unit_of_measurement=UNIT_DEGREES,
             accuracy_decimals=1,
             device_class=DEVICE_CLASS_EMPTY,
@@ -98,9 +98,12 @@ async def to_code(config):
     if devices_cfg := config.get(CONF_DEVICES):
         for device_cfg in devices_cfg:
             cg.add(parent.add_device(device_cfg[CONF_DEVICE]))
-            if CONF_WIND_SPEED in device_cfg:
-                sens = await sensor.new_sensor(device_cfg[CONF_WIND_SPEED])
-                cg.add(parent.add_wind_speed_sensor(device_cfg[CONF_DEVICE], sens))
+            if CONF_SPEED in device_cfg:
+                sens = await sensor.new_sensor(device_cfg[CONF_SPEED])
+                cg.add(parent.add_speed_sensor(device_cfg[CONF_DEVICE], sens))
+            if CONF_DIRECTION in device_cfg:
+                sens = await sensor.new_sensor(device_cfg[CONF_DIRECTION])
+                cg.add(parent.add_direction_sensor(device_cfg[CONF_DEVICE], sens))
             if CONF_TEMPERATURE in device_cfg:
                 sens = await sensor.new_sensor(device_cfg[CONF_TEMPERATURE])
                 cg.add(parent.add_temperature_sensor(device_cfg[CONF_DEVICE], sens))
