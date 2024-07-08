@@ -13,6 +13,7 @@ from esphome.const import (
     DEVICE_CLASS_DISTANCE,
     DEVICE_CLASS_EMPTY,
     DEVICE_CLASS_WIND_SPEED,
+    DEVICE_CLASS_ILLUMINANCE,
     STATE_CLASS_MEASUREMENT,
     STATE_CLASS_TOTAL_INCREASING,
     STATE_CLASS_TOTAL,
@@ -21,6 +22,7 @@ from esphome.const import (
     UNIT_PERCENT,
     UNIT_KILOMETER,
     UNIT_KILOMETER_PER_HOUR,
+    UNIT_LUX,
     UNIT_EMPTY,
 )
 from . import AcuRite
@@ -34,6 +36,8 @@ CONF_RAIN = 'rain'
 CONF_SPEED = 'speed'
 CONF_DIRECTION = 'direction'
 CONF_LIGHTNING = 'lightning'
+CONF_UV = 'uv'
+CONF_LUX = 'lux'
 UNIT_MILLIMETER = "mm"
 
 DEVICE_SCHEMA = cv.Schema(
@@ -81,6 +85,18 @@ DEVICE_SCHEMA = cv.Schema(
             device_class=DEVICE_CLASS_EMPTY,
             state_class=STATE_CLASS_TOTAL,
         ),
+        cv.Optional(CONF_UV): sensor.sensor_schema(
+            unit_of_measurement=UNIT_EMPTY,
+            accuracy_decimals=0,
+            device_class=DEVICE_CLASS_EMPTY,
+            state_class=STATE_CLASS_MEASUREMENT,
+        ),
+        cv.Optional(CONF_LUX): sensor.sensor_schema(
+            unit_of_measurement=UNIT_LUX,
+            accuracy_decimals=0,
+            device_class=DEVICE_CLASS_ILLUMINANCE,
+            state_class=STATE_CLASS_MEASUREMENT,
+        ),
     }
 )
 
@@ -119,3 +135,9 @@ async def to_code(config):
             if CONF_DISTANCE in device_cfg:
                 sens = await sensor.new_sensor(device_cfg[CONF_DISTANCE])
                 cg.add(parent.add_distance_sensor(device_cfg[CONF_DEVICE], sens))
+            if CONF_UV in device_cfg:
+                sens = await sensor.new_sensor(device_cfg[CONF_UV])
+                cg.add(parent.add_uv_sensor(device_cfg[CONF_DEVICE], sens))
+            if CONF_LUX in device_cfg:
+                sens = await sensor.new_sensor(device_cfg[CONF_LUX])
+                cg.add(parent.add_lux_sensor(device_cfg[CONF_DEVICE], sens))

@@ -18,6 +18,8 @@ class AcuRiteDevice {
   void add_distance_sensor(sensor::Sensor *sensor) { distance_sensor_ = sensor; }
   void add_rainfall_sensor(sensor::Sensor *sensor) { rainfall_sensor_ = sensor; }
   void add_lightning_sensor(sensor::Sensor *sensor) { lightning_sensor_ = sensor; }
+  void add_uv_sensor(sensor::Sensor *sensor) { uv_sensor_ = sensor; }
+  void add_lux_sensor(sensor::Sensor *sensor) { lux_sensor_ = sensor; }
   void update_speed(float value);
   void update_direction(float value);
   void update_temperature(float value);
@@ -25,6 +27,8 @@ class AcuRiteDevice {
   void update_distance(float value);
   void update_rainfall(uint32_t count);
   void update_lightning(uint32_t count);
+  void update_uv(float value);
+  void update_lux(float value);
   void dump_config();
   void setup();
 
@@ -42,6 +46,8 @@ class AcuRiteDevice {
   sensor::Sensor *distance_sensor_{nullptr};
   sensor::Sensor *rainfall_sensor_{nullptr};
   sensor::Sensor *lightning_sensor_{nullptr};
+  sensor::Sensor *uv_sensor_{nullptr};
+  sensor::Sensor *lux_sensor_{nullptr};
   uint32_t rainfall_last_{0xFFFFFFFF};
   uint32_t lightning_last_{0xFFFFFFFF};
   float distance_last_{1000};
@@ -64,6 +70,8 @@ class AcuRite : public Component, public remote_base::RemoteReceiverListener {
   void add_rainfall_sensor(uint16_t id, sensor::Sensor *sensor) { this->devices_[id]->add_rainfall_sensor(sensor); }
   void add_distance_sensor(uint16_t id, sensor::Sensor *sensor) { this->devices_[id]->add_distance_sensor(sensor); }
   void add_lightning_sensor(uint16_t id, sensor::Sensor *sensor) { this->devices_[id]->add_lightning_sensor(sensor); }
+  void add_uv_sensor(uint16_t id, sensor::Sensor *sensor) { this->devices_[id]->add_uv_sensor(sensor); }
+  void add_lux_sensor(uint16_t id, sensor::Sensor *sensor) { this->devices_[id]->add_lux_sensor(sensor); }
   void set_srcrecv(remote_receiver::RemoteReceiverComponent *srcrecv) { this->remote_receiver_ = srcrecv; }
 
  protected:
