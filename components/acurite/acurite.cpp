@@ -128,6 +128,8 @@ void AcuRiteDevice::dump_config() {
   LOG_SENSOR("    ", "Rainfall", this->rainfall_sensor_);
   LOG_SENSOR("    ", "Distance", this->distance_sensor_);
   LOG_SENSOR("    ", "Lightning", this->lightning_sensor_);
+  LOG_SENSOR("    ", "Lux", this->lux_sensor_);
+  LOG_SENSOR("    ", "UV", this->uv_sensor_);
 }
 
 bool AcuRite::validate_(uint8_t *data, uint8_t len, int8_t except) {
