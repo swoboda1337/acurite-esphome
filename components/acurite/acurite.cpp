@@ -17,7 +17,7 @@ static const int8_t as3935_lut[32] = {2, 2, 2, 2, 5, 6, 6, 8, 10, 10, 12, 12,
 void AcuRiteDevice::update_uv(float value) {
   if (this->uv_sensor_) {
     // do not confirm light values as they can change rapidly
-    if (value >= 0.0f && value < 16.0f) {
+    if (value >= 0.0f && value <= 15.0f) {
       this->uv_sensor_->publish_state(value);
     }
   }
@@ -26,7 +26,7 @@ void AcuRiteDevice::update_uv(float value) {
 void AcuRiteDevice::update_lux(float value) {
   if (this->lux_sensor_) {
     // do not confirm light values as they can change rapidly
-    if (value >= 0.0f && value < 120000.0f) {
+    if (value >= 0.0f && value <= 120000.0f) {
       this->lux_sensor_->publish_state(value);
     }
   }
@@ -35,7 +35,7 @@ void AcuRiteDevice::update_lux(float value) {
 void AcuRiteDevice::update_direction(float value) {
   if (this->direction_sensor_) {
     // do not confirm wind values as they can change rapidly
-    if (value >= 0.0f && value < 360.0f) {
+    if (value >= 0.0f && value <= 360.0f) {
       this->direction_sensor_->publish_state(value);
     }
   }
@@ -44,7 +44,7 @@ void AcuRiteDevice::update_direction(float value) {
 void AcuRiteDevice::update_speed(float value) {
   if (this->speed_sensor_) {
     // do not confirm wind values as they can change rapidly
-    if (value >= 0.0f && value < 200.0f) {
+    if (value >= 0.0f && value <= 257.0f) {
       this->speed_sensor_->publish_state(value);
     }
   }
