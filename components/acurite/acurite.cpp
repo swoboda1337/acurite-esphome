@@ -216,7 +216,7 @@ void AcuRite::decode_atlas_(uint8_t *data, uint8_t len) {
     uint8_t msg = data[2] & 0x3F;
     if (msg == 0x05 || msg == 0x06 || msg == 0x07 || msg == 0x25 || msg == 0x26 || msg == 0x27) {
       char channel = channel_lut[data[0] >> 6];
-      uint16_t id = ((data[0] & 0x0F) << 8) | (data[1] & 0xFF);
+      uint16_t id = ((data[0] & 0x03) << 8) | (data[1] & 0xFF);
       uint16_t battery = (data[2] >> 6) & 1;
       float speed = (float)(((data[3] & 0x7F) << 1) | ((data[4] & 0x40) >> 6)) * 1.60934f;
       int16_t lightning = -1;
