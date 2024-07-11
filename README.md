@@ -69,6 +69,20 @@ Example yaml to use in esphome device config:
                 - timeout: 5min
                 - throttle: 50sec
           - device: 0x0083
+            speed:
+              name: "Wind speed"
+              filters:
+                - timeout: 5min
+                - or:
+                  - throttle: 10min
+                  - delta: 0.01
+            direction:  
+              name: "Wind direction"
+              filters:
+                - timeout: 5min
+                - or:
+                  - throttle: 10min
+                  - delta: 0.01
             lightning:
               name: "Lightning Strikes"
               force_update: true
@@ -84,6 +98,20 @@ Example yaml to use in esphome device config:
                 - timeout: 5min
                 - or:
                   - throttle: 30min
+                  - delta: 0.01
+            uv:
+              name: "UV index"
+              filters:
+                - timeout: 5min
+                - or:
+                  - throttle: 10min
+                  - delta: 0.01
+            lux:
+              name: "Light Intensity"
+              filters:
+                - timeout: 5min
+                - or:
+                  - throttle: 10min
                   - delta: 0.01
 
 It is recommended to use force_update so any statistics sensors in Home Assistant will work correctly. For example if the humidity stays at 99% all day, without force_update, a max/min statistics sensor would show unavailable as no data points will be logged. Using the delta and throttle filters will limit the amount of data being sent up and stored. 
