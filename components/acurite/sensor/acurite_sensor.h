@@ -10,6 +10,7 @@ namespace acurite {
 
 class AcuRiteSensor: public AcuRiteDevice {
  public:
+  void set_id(uint16_t id) { id_ = id; }
   void update_speed(float value) override;
   void update_direction(float value) override;
   void update_temperature(float value) override;
@@ -34,6 +35,7 @@ class AcuRiteSensor: public AcuRiteDevice {
   float distance_last_{1000};
   float humidity_last_{1000};
   float temperature_last_{1000};
+  uint16_t id_{0};
 
   SUB_SENSOR(direction)
   SUB_SENSOR(speed)

@@ -17,12 +17,8 @@ class AcuRiteDevice : public Component {
   virtual void update_lightning(uint32_t count) = 0;
   virtual void update_uv(float value) = 0;
   virtual void update_lux(float value) = 0;
-  void set_id(uint16_t id) { id_ = id; }
   void dump_config() override;
   void setup() override;
-
- protected:
-  uint16_t id_{0};
 };
 
 class AcuRiteComponent : public Component, public remote_base::RemoteReceiverListener { 
