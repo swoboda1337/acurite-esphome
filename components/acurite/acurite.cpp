@@ -1,3 +1,6 @@
+#include "esphome/core/log.h"
+#include "esphome/core/helpers.h"
+#include "esphome/core/hal.h"
 #include "acurite.h"
 
 namespace esphome {
@@ -8,131 +11,12 @@ static const char *const TAG = "acurite";
 // standard channel mapping for the majority of acurite devices 
 static const char channel_lut[4] = {'C', 'X', 'B', 'A'};
 
-// the lightning distance lookup table was taken from the AS3935 datasheet which can be 
-// found here: https://www.mouser.com/datasheet/2/588/ams_AS3935_Datasheet_EN_v5-1214568.pdf
+// the lightning distance lookup table was taken from the AS3935 datasheet
 static const int8_t as3935_lut[32] = {2, 2, 2, 2, 5, 6, 6, 8, 10, 10, 12, 12, 
                                       14, 14, 14, 17, 17, 20, 20, 20, 24, 24, 
                                       27, 27, 31, 31, 31, 34, 37, 37, 40, 40};
 
-void AcuRiteDevice::update_uv(float value) {
-  if (this->uv_sensor_) {
-    // do not confirm light values as they can change rapidly
-    if (value >= 0.0f && value <= 15.0f) {
-      this->uv_sensor_->publish_state(value);
-    }
-  }
-}
-
-void AcuRiteDevice::update_lux(float value) {
-  if (this->lux_sensor_) {
-    // do not confirm light values as they can change rapidly
-    if (value >= 0.0f && value <= 120000.0f) {
-      this->lux_sensor_->publish_state(value);
-    }
-  }
-}
-
-void AcuRiteDevice::update_direction(float value) {
-  if (this->direction_sensor_) {
-    // do not confirm wind values as they can change rapidly
-    if (value >= 0.0f && value <= 360.0f) {
-      this->direction_sensor_->publish_state(value);
-    }
-  }
-}
-
-void AcuRiteDevice::update_speed(float value) {
-  if (this->speed_sensor_) {
-    // do not confirm wind values as they can change rapidly
-    if (value >= 0.0f && value <= 257.0f) {
-      this->speed_sensor_->publish_state(value);
-    }
-  }
-}
-
-void AcuRiteDevice::update_temperature(float value) {
-  if (this->temperature_sensor_) {
-    // filter out crc false positives by confirming any large changes in value
-    if (fabsf(value - this->temperature_last_) < 1.0) {
-      this->temperature_sensor_->publish_state(value);
-    }
-    this->temperature_last_ = value;
-  }
-}
-
-void AcuRiteDevice::update_humidity(float value) {
-  if (this->humidity_sensor_) {
-    // filter out crc false positives by confirming any large changes in value
-    if (fabsf(value - this->humidity_last_) < 1.0) {
-      this->humidity_sensor_->publish_state(value);
-    }
-    this->humidity_last_ = value;
-  }
-}
-
-void AcuRiteDevice::update_distance(float value) {
-  if (this->distance_sensor_) {
-    // filter out crc false positives by confirming any large changes in value
-    if (fabsf(value - this->distance_last_) < 1.0) {
-      this->distance_sensor_->publish_state(value);
-    }
-    this->distance_last_ = value;
-  }
-}
-
-void AcuRiteDevice::update_lightning(uint32_t count) {
-  if (this->lightning_sensor_) {
-    // filter out crc false positives by confirming any change in value
-    if (count == this->lightning_last_) {
-      this->lightning_sensor_->publish_state(count);
-    }
-    this->lightning_last_ = count;
-  }
-}
-
-void AcuRiteDevice::update_rainfall(uint32_t count) {
-  if (this->rainfall_sensor_) {
-    // filter out crc false positives by confirming any change in value
-    if (count == this->rainfall_last_) {
-      // update rainfall state and save to nvm
-      if (count != this->rainfall_state_.device) {
-        if (count >= this->rainfall_state_.device) {
-          this->rainfall_state_.total += count - this->rainfall_state_.device;
-        } else {
-          this->rainfall_state_.total += count;
-        }
-        this->rainfall_state_.device = count;
-        this->preferences_.save(&this->rainfall_state_);
-      }
-      this->rainfall_sensor_->publish_state(this->rainfall_state_.total * 0.254);
-    }
-    this->rainfall_last_ = count;
-  }
-}
-
-void AcuRiteDevice::setup() {
-  if (this->rainfall_sensor_) {
-    // load state from nvm, count needs to increase even after a reset
-    uint32_t type = fnv1_hash(std::string("AcuRite: ") + format_hex(this->id_));
-    this->preferences_ = global_preferences->make_preference<RainfallState>(type);
-    this->preferences_.load(&this->rainfall_state_);
-  }
-}
-
-void AcuRiteDevice::dump_config() {
-  ESP_LOGCONFIG(TAG, "  0x%04x:", this->id_);
-  LOG_SENSOR("    ", "Speed", this->speed_sensor_);
-  LOG_SENSOR("    ", "Direction", this->direction_sensor_);
-  LOG_SENSOR("    ", "Temperature", this->temperature_sensor_);
-  LOG_SENSOR("    ", "Humidity", this->humidity_sensor_);
-  LOG_SENSOR("    ", "Rainfall", this->rainfall_sensor_);
-  LOG_SENSOR("    ", "Distance", this->distance_sensor_);
-  LOG_SENSOR("    ", "Lightning", this->lightning_sensor_);
-  LOG_SENSOR("    ", "Lux", this->lux_sensor_);
-  LOG_SENSOR("    ", "UV", this->uv_sensor_);
-}
-
-bool AcuRite::validate_(uint8_t *data, uint8_t len, int8_t except) {
+bool AcuRiteComponent::validate_(uint8_t *data, uint8_t len, int8_t except) {
   ESP_LOGV(TAG, "Validating data: %s", format_hex(data, len).c_str());
 
   // checksum
@@ -159,7 +43,7 @@ bool AcuRite::validate_(uint8_t *data, uint8_t len, int8_t except) {
   return true;
 }
 
-void AcuRite::decode_temperature_(uint8_t *data, uint8_t len) {
+void AcuRiteComponent::decode_temperature_(uint8_t *data, uint8_t len) {
   if (len == 7 && (data[2] & 0x3F) == 0x04 && this->validate_(data, 7, -1)) {
     char channel = channel_lut[data[0] >> 6];
     uint16_t id = ((data[0] & 0x3F) << 8) | (data[1] & 0xFF);
@@ -175,7 +59,7 @@ void AcuRite::decode_temperature_(uint8_t *data, uint8_t len) {
   }
 }
 
-void AcuRite::decode_rainfall_(uint8_t *data, uint8_t len) {
+void AcuRiteComponent::decode_rainfall_(uint8_t *data, uint8_t len) {
   if (len == 8 && (data[2] & 0x3F) == 0x30 && this->validate_(data, 8, -1)) {
     static const char channel_lut[4] = {'A', 'B', 'C', 'X'};
     char channel = channel_lut[data[0] >> 6];
@@ -190,7 +74,7 @@ void AcuRite::decode_rainfall_(uint8_t *data, uint8_t len) {
   }
 }
 
-void AcuRite::decode_lightning_(uint8_t *data, uint8_t len) {
+void AcuRiteComponent::decode_lightning_(uint8_t *data, uint8_t len) {
   if (len == 9 && (data[2] & 0x3F) == 0x2F && this->validate_(data, 9, -1)) {
     char channel = channel_lut[data[0] >> 6];
     uint16_t id = ((data[0] & 0x3F) << 8) | (data[1] & 0xFF);
@@ -211,7 +95,7 @@ void AcuRite::decode_lightning_(uint8_t *data, uint8_t len) {
   }
 }
 
-void AcuRite::decode_atlas_(uint8_t *data, uint8_t len) {
+void AcuRiteComponent::decode_atlas_(uint8_t *data, uint8_t len) {
   if (len == 10 && this->validate_(data, 10, -1)) {
     uint8_t msg = data[2] & 0x3F;
     if (msg == 0x05 || msg == 0x06 || msg == 0x07 || msg == 0x25 || msg == 0x26 || msg == 0x27) {
@@ -272,7 +156,7 @@ void AcuRite::decode_atlas_(uint8_t *data, uint8_t len) {
   }
 }
 
-void AcuRite::decode_notos_(uint8_t *data, uint8_t len) {
+void AcuRiteComponent::decode_notos_(uint8_t *data, uint8_t len) {
   // the wind speed conversion value was derived by sending all possible raw values
   // my acurite, the conversion here will match almost exactly
   if (len == 8 && (data[2] & 0x3F) == 0x20 && this->validate_(data, 8, 6)) {
@@ -292,7 +176,7 @@ void AcuRite::decode_notos_(uint8_t *data, uint8_t len) {
   }
 }
 
-void AcuRite::decode_iris_(uint8_t *data, uint8_t len) {
+void AcuRiteComponent::decode_iris_(uint8_t *data, uint8_t len) {
   // the wind speed and direction conversion value were derived by sending all possible 
   // raw values my acurite, the conversion here will match almost exactly
   if (len == 8 && this->validate_(data, 8, -1)) {
@@ -329,7 +213,7 @@ void AcuRite::decode_iris_(uint8_t *data, uint8_t len) {
   }
 }
 
-bool AcuRite::on_receive(remote_base::RemoteReceiveData data) {
+bool AcuRiteComponent::on_receive(remote_base::RemoteReceiveData data) {
   uint32_t syncs = 0;
   uint32_t bits = 0;
   uint8_t bytes[10];
@@ -379,19 +263,8 @@ bool AcuRite::on_receive(remote_base::RemoteReceiveData data) {
   return true;
 }
 
-void AcuRite::setup() {
-  ESP_LOGCONFIG(TAG, "Setting up AcuRite...");
-  for (auto const& device : this->devices_) {
-    device.second->setup();
-  }
+void AcuRiteComponent::setup() {
   this->remote_receiver_->register_listener(this);
-}
-
-void AcuRite::dump_config() {
-  ESP_LOGCONFIG(TAG, "AcuRite:");
-  for (auto const& device : this->devices_) {
-    device.second->dump_config();
-  }
 }
 
 }  // namespace acurite

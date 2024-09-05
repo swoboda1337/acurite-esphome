@@ -2,24 +2,20 @@ import esphome.codegen as cg
 import esphome.config_validation as cv
 from esphome import pins
 from esphome.components import remote_receiver
-from esphome.const import (
-    CONF_ID,
-    CONF_TIME_ID,
-)
+from esphome.const import CONF_ID
 
 CODEOWNERS = ["@swoboda1337"]
-AUTO_LOAD = ["sensor"]
 DEPENDENCIES = ["remote_receiver"]
 
 CONF_RECEIVER_ID = 'receiver_id'
 
 acurite_ns = cg.esphome_ns.namespace("acurite")
-AcuRite = acurite_ns.class_("AcuRite", cg.Component)
+AcuRiteComponent = acurite_ns.class_("AcuRiteComponent", cg.Component)
 
 CONFIG_SCHEMA = (
     cv.Schema(
         {
-            cv.GenerateID(): cv.declare_id(AcuRite),
+            cv.GenerateID(): cv.declare_id(AcuRiteComponent),
             cv.GenerateID(CONF_RECEIVER_ID): cv.use_id(remote_receiver.RemoteReceiverComponent),
         }
     )
