@@ -8,7 +8,7 @@
 namespace esphome {
 namespace acurite {
 
-class AcuRiteSensor: public AcuRiteDevice {
+class AcuRiteSensor: public Component, public AcuRiteDevice {
  public:
   void set_id(uint16_t id) { id_ = id; }
   void update_speed(float value) override;

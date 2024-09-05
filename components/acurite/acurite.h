@@ -6,7 +6,7 @@
 namespace esphome {
 namespace acurite {
 
-class AcuRiteDevice : public Component { 
+class AcuRiteDevice { 
  public:
   virtual void update_speed(float value) = 0;
   virtual void update_direction(float value) = 0;
@@ -17,8 +17,6 @@ class AcuRiteDevice : public Component {
   virtual void update_lightning(uint32_t count) = 0;
   virtual void update_uv(float value) = 0;
   virtual void update_lux(float value) = 0;
-  void dump_config() override;
-  void setup() override;
 };
 
 class AcuRiteComponent : public Component, public remote_base::RemoteReceiverListener { 
