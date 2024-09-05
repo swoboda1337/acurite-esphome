@@ -6,7 +6,7 @@
 namespace esphome {
 namespace acurite {
 
-class AcuRiteDevice { 
+class AcuRiteDevice {
  public:
   virtual void update_speed(float value) = 0;
   virtual void update_direction(float value) = 0;
@@ -19,7 +19,7 @@ class AcuRiteDevice {
   virtual void update_lux(float value) = 0;
 };
 
-class AcuRiteComponent : public Component, public remote_base::RemoteReceiverListener { 
+class AcuRiteComponent : public Component, public remote_base::RemoteReceiverListener {
  public:
   float get_setup_priority() const override { return setup_priority::LATE; }
   void setup() override;
@@ -36,7 +36,7 @@ class AcuRiteComponent : public Component, public remote_base::RemoteReceiverLis
   void decode_iris_(uint8_t *data, uint8_t len);
   bool validate_(uint8_t *data, uint8_t len, int8_t except);
   remote_receiver::RemoteReceiverComponent *remote_receiver_{nullptr};
-  std::map<uint16_t, AcuRiteDevice*> devices_;
+  std::map<uint16_t, AcuRiteDevice *> devices_;
 };
 
 }  // namespace acurite

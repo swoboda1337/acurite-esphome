@@ -1,45 +1,43 @@
 import esphome.codegen as cg
-import esphome.config_validation as cv
 from esphome.components import sensor
+import esphome.config_validation as cv
 from esphome.const import (
+    CONF_DISTANCE,
+    CONF_HUMIDITY,
     CONF_ID,
     CONF_TEMPERATURE,
-    CONF_HUMIDITY,
-    CONF_DISTANCE,
-    DEVICE_CLASS_TEMPERATURE,
-    DEVICE_CLASS_HUMIDITY,
-    DEVICE_CLASS_PRECIPITATION,
     DEVICE_CLASS_DISTANCE,
     DEVICE_CLASS_EMPTY,
-    DEVICE_CLASS_WIND_SPEED,
+    DEVICE_CLASS_HUMIDITY,
     DEVICE_CLASS_ILLUMINANCE,
+    DEVICE_CLASS_PRECIPITATION,
+    DEVICE_CLASS_TEMPERATURE,
+    DEVICE_CLASS_WIND_SPEED,
     STATE_CLASS_MEASUREMENT,
-    STATE_CLASS_TOTAL_INCREASING,
     STATE_CLASS_TOTAL,
-    UNIT_DEGREES,
+    STATE_CLASS_TOTAL_INCREASING,
     UNIT_CELSIUS,
-    UNIT_PERCENT,
+    UNIT_DEGREES,
+    UNIT_EMPTY,
     UNIT_KILOMETER,
     UNIT_KILOMETER_PER_HOUR,
     UNIT_LUX,
-    UNIT_EMPTY,
+    UNIT_PERCENT,
 )
-from .. import (
-    AcuRiteComponent,
-    acurite_ns
-)
+
+from .. import AcuRiteComponent, acurite_ns
 
 DEPENDENCIES = ["acurite"]
 
-CONF_ACURITE_ID = 'acurite_id'
-CONF_DEVICES = 'devices'
-CONF_DEVICE = 'device'
-CONF_RAIN = 'rain'
-CONF_SPEED = 'speed'
-CONF_DIRECTION = 'direction'
-CONF_LIGHTNING = 'lightning'
-CONF_UV = 'uv'
-CONF_LUX = 'lux'
+CONF_ACURITE_ID = "acurite_id"
+CONF_DEVICES = "devices"
+CONF_DEVICE = "device"
+CONF_RAIN = "rain"
+CONF_SPEED = "speed"
+CONF_DIRECTION = "direction"
+CONF_LIGHTNING = "lightning"
+CONF_UV = "uv"
+CONF_LUX = "lux"
 UNIT_MILLIMETER = "mm"
 
 AcuRiteSensor = acurite_ns.class_("AcuRiteSensor", cg.Component)
@@ -105,14 +103,13 @@ DEVICE_SCHEMA = cv.Schema(
     }
 )
 
-CONFIG_SCHEMA = (
-    cv.Schema(
-        {
-            cv.GenerateID(CONF_ACURITE_ID): cv.use_id(AcuRiteComponent),
-            cv.Required(CONF_DEVICES): cv.ensure_list(DEVICE_SCHEMA),
-        }
-    )
+CONFIG_SCHEMA = cv.Schema(
+    {
+        cv.GenerateID(CONF_ACURITE_ID): cv.use_id(AcuRiteComponent),
+        cv.Required(CONF_DEVICES): cv.ensure_list(DEVICE_SCHEMA),
+    }
 )
+
 
 async def to_code(config):
     parent = await cg.get_variable(config[CONF_ACURITE_ID])

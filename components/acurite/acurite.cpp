@@ -8,13 +8,12 @@ namespace acurite {
 
 static const char *const TAG = "acurite";
 
-// standard channel mapping for the majority of acurite devices 
+// standard channel mapping for the majority of acurite devices
 static const char channel_lut[4] = {'C', 'X', 'B', 'A'};
 
 // the lightning distance lookup table was taken from the AS3935 datasheet
-static const int8_t as3935_lut[32] = {2, 2, 2, 2, 5, 6, 6, 8, 10, 10, 12, 12, 
-                                      14, 14, 14, 17, 17, 20, 20, 20, 24, 24, 
-                                      27, 27, 31, 31, 31, 34, 37, 37, 40, 40};
+static const int8_t as3935_lut[32] = {2,  2,  2,  2,  5,  6,  6,  8,  10, 10, 12, 12, 14, 14, 14, 17,
+                                      17, 20, 20, 20, 24, 24, 27, 27, 31, 31, 31, 34, 37, 37, 40, 40};
 
 bool AcuRiteComponent::validate_(uint8_t *data, uint8_t len, int8_t except) {
   ESP_LOGV(TAG, "Validating data: %s", format_hex(data, len).c_str());
@@ -49,9 +48,8 @@ void AcuRiteComponent::decode_temperature_(uint8_t *data, uint8_t len) {
     uint16_t id = ((data[0] & 0x3F) << 8) | (data[1] & 0xFF);
     uint16_t battery = (data[2] >> 6) & 1;
     float humidity = data[3] & 0x7F;
-    float temp = ((float)(((data[4] & 0x0F) << 7) | (data[5] & 0x7F)) - 1000) / 10.0;
-    ESP_LOGD(TAG, "Temperature: ch %c, id %04x, bat %d, temp %.1f, rh %.1f",
-             channel, id, battery, temp, humidity);
+    float temp = ((float) (((data[4] & 0x0F) << 7) | (data[5] & 0x7F)) - 1000) / 10.0;
+    ESP_LOGD(TAG, "Temperature: ch %c, id %04x, bat %d, temp %.1f, rh %.1f", channel, id, battery, temp, humidity);
     if (this->devices_.count(id) > 0) {
       this->devices_[id]->update_temperature(temp);
       this->devices_[id]->update_humidity(humidity);
@@ -66,8 +64,7 @@ void AcuRiteComponent::decode_rainfall_(uint8_t *data, uint8_t len) {
     uint16_t id = ((data[0] & 0x3F) << 8) | (data[1] & 0xFF);
     uint16_t battery = (data[2] >> 6) & 1;
     uint32_t count = ((data[4] & 0x7F) << 14) | ((data[5] & 0x7F) << 7) | ((data[6] & 0x7F) << 0);
-    ESP_LOGD(TAG, "Rainfall:    ch %c, id %04x, bat %d, count %d", 
-             channel, id, battery, count);
+    ESP_LOGD(TAG, "Rainfall:    ch %c, id %04x, bat %d, count %d", channel, id, battery, count);
     if (this->devices_.count(id) > 0) {
       this->devices_[id]->update_rainfall(count);
     }
@@ -80,12 +77,12 @@ void AcuRiteComponent::decode_lightning_(uint8_t *data, uint8_t len) {
     uint16_t id = ((data[0] & 0x3F) << 8) | (data[1] & 0xFF);
     uint16_t battery = (data[2] >> 6) & 1;
     float humidity = data[3] & 0x7F;
-    float temp = ((float)(((data[4] & 0x1F) << 7) | (data[5] & 0x7F)) - 1800) * 0.1 * 5.0 / 9.0;
+    float temp = ((float) (((data[4] & 0x1F) << 7) | (data[5] & 0x7F)) - 1800) * 0.1 * 5.0 / 9.0;
     float distance = as3935_lut[data[7] & 0x1F];
     uint16_t count = ((data[6] & 0x7F) << 1) | ((data[7] >> 6) & 1);
     uint16_t rfi = (data[7] >> 5) & 1;
-    ESP_LOGD(TAG, "Lightning:   ch %c, id %04x, bat %d, temp %.1f, rh %.1f, count %d, dist %.1f, rfi %d",
-             channel, id, battery, temp, humidity, count, distance, rfi);
+    ESP_LOGD(TAG, "Lightning:   ch %c, id %04x, bat %d, temp %.1f, rh %.1f, count %d, dist %.1f, rfi %d", channel, id,
+             battery, temp, humidity, count, distance, rfi);
     if (this->devices_.count(id) > 0) {
       this->devices_[id]->update_temperature(temp);
       this->devices_[id]->update_humidity(humidity);
@@ -102,7 +99,7 @@ void AcuRiteComponent::decode_atlas_(uint8_t *data, uint8_t len) {
       char channel = channel_lut[data[0] >> 6];
       uint16_t id = ((data[0] & 0x03) << 8) | (data[1] & 0xFF);
       uint16_t battery = (data[2] >> 6) & 1;
-      float speed = (float)(((data[3] & 0x7F) << 1) | ((data[4] & 0x40) >> 6)) * 1.60934f;
+      float speed = (float) (((data[3] & 0x7F) << 1) | ((data[4] & 0x40) >> 6)) * 1.60934f;
       int16_t lightning = -1;
       int16_t distance = -1;
       if (msg == 0x25 || msg == 0x26 || msg == 0x27) {
@@ -110,9 +107,9 @@ void AcuRiteComponent::decode_atlas_(uint8_t *data, uint8_t len) {
         distance = as3935_lut[data[8] & 0x1F];
       }
       if (msg == 0x05 || msg == 0x25) {
-        float temp = ((float)(((data[4] & 0x0F) << 7) | (data[5] & 0x7F)) - 720) * 0.1f * 5.0f / 9.0f;
+        float temp = ((float) (((data[4] & 0x0F) << 7) | (data[5] & 0x7F)) - 720) * 0.1f * 5.0f / 9.0f;
         float humidity = data[6] & 0x7F;
-        ESP_LOGD(TAG, "Atlas 7in1:  ch %c, id %04x, bat %d, speed %.1f, lightning %d, distance %d, temp %.1f, rh %.1f", 
+        ESP_LOGD(TAG, "Atlas 7in1:  ch %c, id %04x, bat %d, speed %.1f, lightning %d, distance %d, temp %.1f, rh %.1f",
                  channel, id, battery, speed, lightning, distance, temp, humidity);
         if (this->devices_.count(id) > 0) {
           this->devices_[id]->update_speed(speed);
@@ -126,7 +123,7 @@ void AcuRiteComponent::decode_atlas_(uint8_t *data, uint8_t len) {
       } else if (msg == 0x06 || msg == 0x26) {
         float direction = ((data[4] & 0x1F) << 5) | ((data[5] & 0x7C) >> 2);
         uint32_t rain = ((data[5] & 0x03) << 7) | (data[6] & 0x7F);
-        ESP_LOGD(TAG, "Atlas 7in1:  ch %c, id %04x, bat %d, speed %.1f, lightning %d, distance %d, dir %.1f, rain %d", 
+        ESP_LOGD(TAG, "Atlas 7in1:  ch %c, id %04x, bat %d, speed %.1f, lightning %d, distance %d, dir %.1f, rain %d",
                  channel, id, battery, speed, lightning, distance, direction, rain);
         if (this->devices_.count(id) > 0) {
           this->devices_[id]->update_speed(speed);
@@ -138,9 +135,9 @@ void AcuRiteComponent::decode_atlas_(uint8_t *data, uint8_t len) {
           }
         }
       } else if (msg == 0x07 || msg == 0x27) {
-        uint32_t uv  = (data[4] & 0x0F);
+        uint32_t uv = (data[4] & 0x0F);
         uint32_t lux = (((data[5] & 0x7F) << 7) | (data[6] & 0x7F)) * 10;
-        ESP_LOGD(TAG, "Atlas 7in1:  ch %c, id %04x, bat %d, speed %.1f, lightning %d, distance %d, uv %d, lux %d", 
+        ESP_LOGD(TAG, "Atlas 7in1:  ch %c, id %04x, bat %d, speed %.1f, lightning %d, distance %d, uv %d, lux %d",
                  channel, id, battery, speed, lightning, distance, uv, lux);
         if (this->devices_.count(id) > 0) {
           this->devices_[id]->update_speed(speed);
@@ -164,10 +161,10 @@ void AcuRiteComponent::decode_notos_(uint8_t *data, uint8_t len) {
     uint16_t id = ((data[0] & 0x3F) << 8) | (data[1] & 0xFF);
     uint16_t battery = (data[2] >> 6) & 1;
     float humidity = data[3] & 0x7F;
-    float temp = ((float)(((data[4] & 0x1F) << 7) | (data[5] & 0x7F)) - 1800) * 0.1f * 5.0f / 9.0f;
-    float speed = (float)(data[6] & 0x7F) * 2.5734f; 
-    ESP_LOGD(TAG, "Notos 3in1:  ch %c, id %04x, bat %d, temp %.1f, rh %.1f, speed %.1f",
-             channel, id, battery, temp, humidity, speed);
+    float temp = ((float) (((data[4] & 0x1F) << 7) | (data[5] & 0x7F)) - 1800) * 0.1f * 5.0f / 9.0f;
+    float speed = (float) (data[6] & 0x7F) * 2.5734f;
+    ESP_LOGD(TAG, "Notos 3in1:  ch %c, id %04x, bat %d, temp %.1f, rh %.1f, speed %.1f", channel, id, battery, temp,
+             humidity, speed);
     if (this->devices_.count(id) > 0) {
       this->devices_[id]->update_temperature(temp);
       this->devices_[id]->update_humidity(humidity);
@@ -177,32 +174,32 @@ void AcuRiteComponent::decode_notos_(uint8_t *data, uint8_t len) {
 }
 
 void AcuRiteComponent::decode_iris_(uint8_t *data, uint8_t len) {
-  // the wind speed and direction conversion value were derived by sending all possible 
+  // the wind speed and direction conversion value were derived by sending all possible
   // raw values my acurite, the conversion here will match almost exactly
   if (len == 8 && this->validate_(data, 8, -1)) {
     uint8_t msg = data[2] & 0x3F;
     if (msg == 0x31 || msg == 0x38) {
-      static const float dir_lut[16] = {315.0f, 247.5f, 292.5f, 270.0f, 337.5f, 225.0f,  0.0f, 202.5f, 
-                                         67.5f, 135.0f,  90.0f, 112.5f,  45.0f, 157.5f, 22.5f, 180.0f};
+      static const float dir_lut[16] = {315.0f, 247.5f, 292.5f, 270.0f, 337.5f, 225.0f, 0.0f,  202.5f,
+                                        67.5f,  135.0f, 90.0f,  112.5f, 45.0f,  157.5f, 22.5f, 180.0f};
       char channel = channel_lut[data[0] >> 6];
       uint16_t id = ((data[0] & 0x0F) << 8) | (data[1] & 0xFF);
       uint16_t battery = (data[2] >> 6) & 1;
-      float speed = (float)(((data[3] & 0x1F) << 3) | ((data[4] & 0x70) >> 4)) * 0.839623f;
+      float speed = (float) (((data[3] & 0x1F) << 3) | ((data[4] & 0x70) >> 4)) * 0.839623f;
       if (msg == 0x31) {
         float direction = dir_lut[data[4] & 0x0F];
         uint32_t count = ((data[5] & 0x7F) << 7) | (data[6] & 0x7F);
-        ESP_LOGD(TAG, "Iris 5in1:   ch %c, id %04x, bat %d, speed %.1f, dir %.1f, rain %d",
-                 channel, id, battery, speed, direction, count);
+        ESP_LOGD(TAG, "Iris 5in1:   ch %c, id %04x, bat %d, speed %.1f, dir %.1f, rain %d", channel, id, battery, speed,
+                 direction, count);
         if (this->devices_.count(id) > 0) {
           this->devices_[id]->update_speed(speed);
           this->devices_[id]->update_direction(direction);
           this->devices_[id]->update_rainfall(count);
         }
       } else {
-        float temp = ((float)(((data[4] & 0x0F) << 7) | (data[5] & 0x7F)) - 720) * 0.1f * 5.0f / 9.0f;
+        float temp = ((float) (((data[4] & 0x0F) << 7) | (data[5] & 0x7F)) - 720) * 0.1f * 5.0f / 9.0f;
         float humidity = data[6] & 0x7F;
-        ESP_LOGD(TAG, "Iris 5in1:   ch %c, id %04x, bat %d, speed %.1f, temp %.1f, rh %.1f",
-                 channel, id, battery, speed, temp, humidity);
+        ESP_LOGD(TAG, "Iris 5in1:   ch %c, id %04x, bat %d, speed %.1f, temp %.1f, rh %.1f", channel, id, battery,
+                 speed, temp, humidity);
         if (this->devices_.count(id) > 0) {
           this->devices_[id]->update_speed(speed);
           this->devices_[id]->update_temperature(temp);
@@ -221,7 +218,7 @@ bool AcuRiteComponent::on_receive(remote_base::RemoteReceiveData data) {
   ESP_LOGV(TAG, "Received raw data with length %d", data.size());
 
   // demodulate AcuRite OOK data
-  for(auto i : data.get_raw_data()) {
+  for (auto i : data.get_raw_data()) {
     bool isSync = std::abs(600 - std::abs(i)) < 100;
     bool isZero = std::abs(200 - std::abs(i)) < 100;
     bool isOne = std::abs(400 - std::abs(i)) < 100;
@@ -263,9 +260,7 @@ bool AcuRiteComponent::on_receive(remote_base::RemoteReceiveData data) {
   return true;
 }
 
-void AcuRiteComponent::setup() {
-  this->remote_receiver_->register_listener(this);
-}
+void AcuRiteComponent::setup() { this->remote_receiver_->register_listener(this); }
 
 }  // namespace acurite
 }  // namespace esphome
