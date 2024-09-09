@@ -7,16 +7,16 @@ namespace acurite {
 
 class AcuRiteDevice {
  public:
-  virtual void update_battery(uint8_t value) { }
-  virtual void update_speed(float value) { }
-  virtual void update_direction(float value) { }
-  virtual void update_temperature(float value) { }
-  virtual void update_humidity(float value) { }
-  virtual void update_distance(float value) { }
-  virtual void update_rainfall(uint32_t count) { }
-  virtual void update_lightning(uint32_t count) { }
-  virtual void update_uv(float value) { }
-  virtual void update_lux(float value) { }
+  virtual void update_battery(uint8_t value) {}
+  virtual void update_speed(float value) {}
+  virtual void update_direction(float value) {}
+  virtual void update_temperature(float value) {}
+  virtual void update_humidity(float value) {}
+  virtual void update_distance(float value) {}
+  virtual void update_rainfall(uint32_t count) {}
+  virtual void update_lightning(uint32_t count) {}
+  virtual void update_uv(float value) {}
+  virtual void update_lux(float value) {}
   void set_id(uint16_t id) { this->id_ = id; }
   uint16_t get_id() { return this->id_; }
 
