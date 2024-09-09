@@ -22,6 +22,22 @@ Example yaml to use in esphome device config:
       buffer_size: 100000b
       memory_blocks: 8
 
+    binary_sensor:
+      - platform: acurite
+        devices:
+          - device: 0x1d2e
+            battery_level:
+              name: "Battery Level Temp 1"
+          - device: 0x1fd2
+            battery_level:
+              name: "Battery Level Temp 2"
+          - device: 0x2838
+            battery_level:
+              name: "Battery Level Rainfall"
+          - device: 0x0083
+            battery_level:
+              name: "Battery Level Atlas"
+
     sensor:
       - platform: acurite
         devices:
