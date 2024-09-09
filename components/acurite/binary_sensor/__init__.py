@@ -1,12 +1,7 @@
 import esphome.codegen as cg
 from esphome.components import binary_sensor
 import esphome.config_validation as cv
-from esphome.const import (
-    CONF_ID,
-    CONF_DEVICE,
-    CONF_BATTERY_LEVEL,
-    DEVICE_CLASS_BATTERY
-)
+from esphome.const import CONF_BATTERY_LEVEL, CONF_DEVICE, CONF_ID, DEVICE_CLASS_BATTERY
 
 from .. import AcuRiteComponent, acurite_ns
 
@@ -43,6 +38,8 @@ async def to_code(config):
             await cg.register_component(var, device_cfg)
             cg.add(var.set_id(device_cfg[CONF_DEVICE]))
             if CONF_BATTERY_LEVEL in device_cfg:
-                sens = await binary_sensor.new_binary_sensor(device_cfg[CONF_BATTERY_LEVEL])
+                sens = await binary_sensor.new_binary_sensor(
+                    device_cfg[CONF_BATTERY_LEVEL]
+                )
                 cg.add(var.set_battery_level_binary_sensor(sens))
             cg.add(parent.add_device(var, device_cfg[CONF_DEVICE]))
