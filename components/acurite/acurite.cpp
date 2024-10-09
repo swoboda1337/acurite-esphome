@@ -87,8 +87,8 @@ void AcuRiteComponent::decode_lightning_(uint8_t *data, uint8_t len) {
     float distance = AS3935_LUT[data[7] & 0x1F];
     uint32_t count = ((data[6] & 0x7F) << 1) | ((data[7] >> 6) & 1);
     uint16_t rfi = (data[7] >> 5) & 1;
-    ESP_LOGD(TAG, "Lightning:   ch %c, id %04x, bat %x, temp %.1f, rh %.1f, count %.0f, dist %.1f, rfi %x",
-             channel, id, battery, temp, humidity, (float)count, distance, rfi);
+    ESP_LOGD(TAG, "Lightning:   ch %c, id %04x, bat %x, temp %.1f, rh %.1f, rfi %x, dist %.1f, count %.0f",
+             channel, id, battery, temp, humidity, rfi, distance, (float)count);
     for (auto *device : this->devices_) {
       if (device->get_id() == id) {
         device->update_battery(battery);
@@ -118,15 +118,15 @@ void AcuRiteComponent::decode_atlas_(uint8_t *data, uint8_t len) {
       if (msg == 0x05 || msg == 0x25) {
         float temp = ((float) (((data[4] & 0x0F) << 7) | (data[5] & 0x7F)) - 720) * 0.1f * 5.0f / 9.0f;
         float humidity = data[6] & 0x7F;
-        ESP_LOGD(TAG, "Atlas 7in1:  ch %c, id %04x, bat %x, speed %.1f, lightning %.0f, distance %.1f, temp %.1f, rh %.1f",
-                 channel, id, battery, speed, (float)lightning, distance, temp, humidity);
+        ESP_LOGD(TAG, "Atlas 7in1:  ch %c, id %04x, bat %x, speed %.1f, distance %.1f, lightning %.0f, temp %.1f, rh %.1f",
+                 channel, id, battery, speed, distance, (float)lightning, temp, humidity);
         for (auto *device : this->devices_) {
           if (device->get_id() == id) {
             device->update_battery(battery);
             device->update_speed(speed);
             device->update_temperature(temp);
             device->update_humidity(humidity);
-            if (lightning >= 0) {
+            if (distance > 0.0f) {
               device->update_lightning(lightning);
               device->update_distance(distance);
             }
@@ -135,15 +135,15 @@ void AcuRiteComponent::decode_atlas_(uint8_t *data, uint8_t len) {
       } else if (msg == 0x06 || msg == 0x26) {
         float direction = ((data[4] & 0x1F) << 5) | ((data[5] & 0x7C) >> 2);
         uint32_t rain = ((data[5] & 0x03) << 7) | (data[6] & 0x7F);
-        ESP_LOGD(TAG, "Atlas 7in1:  ch %c, id %04x, bat %x, speed %.1f, lightning %.0f, distance %.1f, dir %.1f, rain %.0f",
-                 channel, id, battery, speed, (float)lightning, distance, direction, (float)rain);
+        ESP_LOGD(TAG, "Atlas 7in1:  ch %c, id %04x, bat %x, speed %.1f, distance %.1f, lightning %.0f, dir %.1f, rain %.0f",
+                 channel, id, battery, speed, distance, (float)lightning, direction, (float)rain);
         for (auto *device : this->devices_) {
           if (device->get_id() == id) {
             device->update_battery(battery);
             device->update_speed(speed);
             device->update_direction(direction);
             device->update_rainfall(rain);
-            if (lightning >= 0) {
+            if (distance > 0.0f) {
               device->update_lightning(lightning);
               device->update_distance(distance);
             }
@@ -152,15 +152,15 @@ void AcuRiteComponent::decode_atlas_(uint8_t *data, uint8_t len) {
       } else if (msg == 0x07 || msg == 0x27) {
         float uv = (data[4] & 0x0F);
         float lux = (((data[5] & 0x7F) << 7) | (data[6] & 0x7F)) * 10;
-        ESP_LOGD(TAG, "Atlas 7in1:  ch %c, id %04x, bat %x, speed %.1f, lightning %.0f, distance %.1f, uv %.1f, lux %.1f",
-                 channel, id, battery, speed, (float)lightning, distance, uv, lux);
+        ESP_LOGD(TAG, "Atlas 7in1:  ch %c, id %04x, bat %x, speed %.1f, distance %.1f, lightning %.0f, uv %.1f, lux %.1f",
+                 channel, id, battery, speed, distance, (float)lightning, uv, lux);
         for (auto *device : this->devices_) {
           if (device->get_id() == id) {
             device->update_battery(battery);
             device->update_speed(speed);
             device->update_uv(uv);
             device->update_lux(lux);
-            if (lightning >= 0) {
+            if (distance > 0.0f) {
               device->update_lightning(lightning);
               device->update_distance(distance);
             }
