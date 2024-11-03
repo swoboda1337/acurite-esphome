@@ -86,28 +86,9 @@ void AcuRiteSensor::update_rainfall(uint32_t count) {
   if (this->rainfall_sensor_) {
     // filter out crc false positives by confirming any change in value
     if (count == this->rainfall_last_) {
-      // update rainfall state and save to nvm
-      if (count != this->rainfall_state_.device) {
-        if (count >= this->rainfall_state_.device) {
-          this->rainfall_state_.total += count - this->rainfall_state_.device;
-        } else {
-          this->rainfall_state_.total += count;
-        }
-        this->rainfall_state_.device = count;
-        this->preferences_.save(&this->rainfall_state_);
-      }
-      this->rainfall_sensor_->publish_state(this->rainfall_state_.total * 0.254);
+      this->rainfall_sensor_->publish_state(count * 0.254f);
     }
     this->rainfall_last_ = count;
-  }
-}
-
-void AcuRiteSensor::setup() {
-  if (this->rainfall_sensor_) {
-    // load state from nvm, count needs to increase even after a reset
-    uint32_t type = fnv1_hash(std::string("AcuRite: ") + format_hex(this->id_));
-    this->preferences_ = global_preferences->make_preference<RainfallState>(type);
-    this->preferences_.load(&this->rainfall_state_);
   }
 }
 

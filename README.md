@@ -130,7 +130,39 @@ Example yaml to use in esphome device config:
 
 It is recommended to use force_update so any statistics sensors in Home Assistant will work correctly. For example if the humidity stays at 99% all day, without force_update, a max/min statistics sensor would show unavailable as no data points will be logged. Using the delta and throttle filters will limit the amount of data being sent up and stored. 
 
-Rain sensor values will only go up and never decrease (sensor state is stored in nvm). Note if you want to add a multiply filter for calibration it's easier to do before the sensor is added. If you apply calibration later on its best to add an offset filter to adjust the value back to where it should be. It's recommended to comment out / disable the rain sensor in the yaml before calibration, reset the rain sensor after, update the filters and then re-enable the rain sensor. That way the resulting total will be unchanged and won't affect any statistics in Home Assistant.
+As of November 2024, rain sensors no longer store anything in NVM and now output the current device total. This was done to make things more flexible. To restore the previous functionality of a lifetime total a lambda + two globals can be used:
+
+    globals:
+      - id: rainfall_total
+        type: float
+        restore_value: yes
+      - id: rainfall_current
+        type: float
+        restore_value: yes
+
+    sensor:
+      - platform: acurite
+        devices:
+          - device: 0x2838
+            rain:
+              name: "Test Backyard Rainfall"
+              force_update: true
+              filters:
+                - lambda: |-
+                    // update rainfall state and save to nvm
+                    if (x != id(rainfall_current)) {
+                      float delta;
+                      if (x >= id(rainfall_current)) {
+                        delta = x - id(rainfall_current);
+                      } else {
+                        delta = x;
+                      }
+                      id(rainfall_total) += delta; // can apply a calibration value here
+                      id(rainfall_current) = x;
+                    }
+                    return id(rainfall_total);
+                - throttle: 50sec
+                - timeout: 5min
 
 An increasing total for rainfall is not very useful by itself. Here are some example sensors that can be added to Home Assistant's configuration.yaml
 
@@ -243,5 +275,3 @@ For lightning detection the following example sensors that can be added to Home 
             min_gradient: 0.0001
             min_samples: 2
             max_samples: 30
-
-

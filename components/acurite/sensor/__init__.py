@@ -18,7 +18,6 @@ from esphome.const import (
     DEVICE_CLASS_WIND_SPEED,
     STATE_CLASS_MEASUREMENT,
     STATE_CLASS_TOTAL,
-    STATE_CLASS_TOTAL_INCREASING,
     UNIT_CELSIUS,
     UNIT_DEGREES,
     UNIT_EMPTY,
@@ -74,7 +73,7 @@ DEVICE_SCHEMA = cv.Schema(
             unit_of_measurement=UNIT_MILLIMETER,
             accuracy_decimals=1,
             device_class=DEVICE_CLASS_PRECIPITATION,
-            state_class=STATE_CLASS_TOTAL_INCREASING,
+            state_class=STATE_CLASS_TOTAL,
         ),
         cv.Optional(CONF_DISTANCE): sensor.sensor_schema(
             unit_of_measurement=UNIT_KILOMETER,

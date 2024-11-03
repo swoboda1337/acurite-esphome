@@ -3,7 +3,6 @@
 
 #include "esphome/components/sensor/sensor.h"
 #include "esphome/components/acurite/acurite.h"
-#include "esphome/core/preferences.h"
 
 namespace esphome {
 namespace acurite {
@@ -20,15 +19,8 @@ class AcuRiteSensor : public Component, public AcuRiteDevice {
   void update_uv(float value) override;
   void update_lux(float value) override;
   void dump_config() override;
-  void setup() override;
 
  protected:
-  struct RainfallState {
-    uint32_t total{0};
-    uint32_t device{0};
-  };
-  ESPPreferenceObject preferences_;
-  RainfallState rainfall_state_;
   uint32_t rainfall_last_{0xFFFFFFFF};
   uint32_t lightning_last_{0xFFFFFFFF};
   float distance_last_{1000};
