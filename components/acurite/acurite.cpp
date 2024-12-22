@@ -42,7 +42,7 @@ bool AcuRiteComponent::validate_(uint8_t *data, uint8_t len, int8_t except) {
   return true;
 }
 
-void AcuRiteComponent::decode_freezer_(uint8_t *data, uint8_t len) {
+void AcuRiteComponent::decode_fridge_(uint8_t *data, uint8_t len) {
   if (len == 6 && this->validate_(data, 6, -1)) {
     char channel = CHANNEL_LUT[data[0] >> 6];
     uint16_t id = ((data[0] & 0x3F) << 8) | (data[1] & 0xFF);
@@ -290,7 +290,7 @@ bool AcuRiteComponent::on_receive(remote_base::RemoteReceiveData data) {
           this->decode_atlas_(bytes, bits / 8);
           this->decode_notos_(bytes, bits / 8);
           this->decode_iris_(bytes, bits / 8);
-          this->decode_freezer_(bytes, bits / 8);
+          this->decode_fridge_(bytes, bits / 8);
         }
 
         // reset if buffer is full

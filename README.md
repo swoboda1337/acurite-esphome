@@ -1,4 +1,4 @@
-ESPHome AcuRite OOK signal decoder, allowing for an easy integration of 433 MHz AcuRite weather sensors into Home Assistant. At the moment the following devices are supported: temperature / humidity sensor, rain gauge, notos weather station, iris weather station, atlas weather station and lightning detector. Support for additional sensors can added if someone is available to test the changes. 
+ESPHome AcuRite OOK signal decoder, allowing for an easy integration of 433 MHz AcuRite weather sensors into Home Assistant. At the moment the following devices are supported: temperature / humidity sensor, rain gauge, notos weather station, iris weather station, atlas weather station,  lightning detector and fridge / freezer temperature sensor. Support for additional sensors can added if someone is available to test the changes.
 
 The AcuRite component can be run without any sensors configured. Data received from all sensors will still be logged, this can be done to determine ids before setting up the sensor yaml.
 
