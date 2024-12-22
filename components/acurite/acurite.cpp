@@ -42,6 +42,29 @@ bool AcuRiteComponent::validate_(uint8_t *data, uint8_t len, int8_t except) {
   return true;
 }
 
+void AcuRiteComponent::decode_freezer_(uint8_t *data, uint8_t len) {
+  if (len == 6 && this->validate_(data, 6, -1)) {
+    char channel = CHANNEL_LUT[data[0] >> 6];
+    uint16_t id = ((data[0] & 0x3F) << 8) | (data[1] & 0xFF);
+    uint8_t msg = data[2] & 0x3F;
+    uint16_t battery = (data[2] >> 6) & 1;
+    float temp = ((float) (((data[3] & 0x7F) << 7) | (data[4] & 0x7F)) - 1800) * 0.1f * 5.0f / 9.0f;
+    if (msg == 0x08) {
+      ESP_LOGD(TAG, "Fridge:      ch %c, id %04x, bat %x, temp %.1f", channel, id, battery, temp);
+    } else if (msg == 0x09) {
+      ESP_LOGD(TAG, "Freezer:     ch %c, id %04x, bat %x, temp %.1f", channel, id, battery, temp);
+    } else {
+      return;
+    }
+    for (auto *device : this->devices_) {
+      if (device->get_id() == id) {
+        device->update_battery(battery);
+        device->update_temperature(temp);
+      }
+    }
+  }
+}
+
 void AcuRiteComponent::decode_temperature_(uint8_t *data, uint8_t len) {
   if (len == 7 && (data[2] & 0x3F) == 0x04 && this->validate_(data, 7, -1)) {
     char channel = CHANNEL_LUT[data[0] >> 6];
@@ -267,6 +290,7 @@ bool AcuRiteComponent::on_receive(remote_base::RemoteReceiveData data) {
           this->decode_atlas_(bytes, bits / 8);
           this->decode_notos_(bytes, bits / 8);
           this->decode_iris_(bytes, bits / 8);
+          this->decode_freezer_(bytes, bits / 8);
         }
 
         // reset if buffer is full
