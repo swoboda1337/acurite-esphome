@@ -270,13 +270,14 @@ bool AcuRiteComponent::on_receive(remote_base::RemoteReceiveData data) {
 
   ESP_LOGV(TAG, "Received raw data with length %" PRIi32, data.size());
 
-  // demodulate AcuRite OOK data
-  for (auto i : data.get_raw_data()) {
-    bool is_sync = std::abs(600 - std::abs(i)) < 100;
-    bool is_zero = std::abs(200 - std::abs(i)) < 100;
-    bool is_one = std::abs(400 - std::abs(i)) < 100;
-    if ((is_one || is_zero) && syncs > 2) {
-      if (i > 0) {
+  // decode AcuRite OOK data
+  data.set_tolerance(100, remote_base::TOLERANCE_MODE_TIME);
+  while (data.is_valid()) {
+    bool is_sync = data.peek_mark(600) || data.peek_space(600);
+    bool is_zero = data.peek_mark(200) || data.peek_space(400);
+    bool is_one = data.peek_mark(400) || data.peek_space(200);
+    if ((is_one || is_zero) && syncs > 4) {
+      if (data.peek() > 0) {
         // detect bits using on state
         bytes[bits / 8] <<= 1;
         bytes[bits / 8] |= is_one ? 1 : 0;
@@ -300,15 +301,14 @@ bool AcuRiteComponent::on_receive(remote_base::RemoteReceiveData data) {
         }
       }
     } else if (is_sync && bits == 0) {
-      // count sync using off state
-      if (i < 0) {
-        syncs++;
-      }
+      // count syncs
+      syncs++;
     } else {
-      // reset if state is invalid
+      // reset state
       bits = 0;
       syncs = 0;
     }
+    data.advance();
   }
   return true;
 }
