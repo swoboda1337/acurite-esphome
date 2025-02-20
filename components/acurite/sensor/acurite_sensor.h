@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include "esphome/components/sensor/sensor.h"
