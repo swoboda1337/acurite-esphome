@@ -26,7 +26,6 @@ class AcuRiteDevice {
 
 class AcuRiteComponent : public Component, public remote_base::RemoteReceiverListener {
  public:
-  float get_setup_priority() const override { return setup_priority::LATE; }
   void add_device(AcuRiteDevice *dev, uint16_t id) { this->devices_.push_back(dev); }
   bool on_receive(remote_base::RemoteReceiveData data) override;
 
