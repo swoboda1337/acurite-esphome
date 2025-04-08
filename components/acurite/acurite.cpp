@@ -313,7 +313,5 @@ bool AcuRiteComponent::on_receive(remote_base::RemoteReceiveData data) {
   return true;
 }
 
-void AcuRiteComponent::setup() { this->remote_receiver_->register_listener(this); }
-
 }  // namespace acurite
 }  // namespace esphome

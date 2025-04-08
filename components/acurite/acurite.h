@@ -27,9 +27,7 @@ class AcuRiteDevice {
 class AcuRiteComponent : public Component, public remote_base::RemoteReceiverListener {
  public:
   float get_setup_priority() const override { return setup_priority::LATE; }
-  void setup() override;
   void add_device(AcuRiteDevice *dev, uint16_t id) { this->devices_.push_back(dev); }
-  void set_srcrecv(remote_receiver::RemoteReceiverComponent *recv) { this->remote_receiver_ = recv; }
   bool on_receive(remote_base::RemoteReceiveData data) override;
 
  protected:
@@ -41,7 +39,6 @@ class AcuRiteComponent : public Component, public remote_base::RemoteReceiverLis
   void decode_iris_(uint8_t *data, uint8_t len);
   void decode_fridge_(uint8_t *data, uint8_t len);
   bool validate_(uint8_t *data, uint8_t len, int8_t except);
-  remote_receiver::RemoteReceiverComponent *remote_receiver_{nullptr};
   std::vector<AcuRiteDevice *> devices_;
 };
 
