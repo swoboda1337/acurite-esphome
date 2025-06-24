@@ -13,8 +13,10 @@ from esphome.const import (
     DEVICE_CLASS_EMPTY,
     DEVICE_CLASS_HUMIDITY,
     DEVICE_CLASS_ILLUMINANCE,
+    DEVICE_CLASS_IRRADIANCE,
     DEVICE_CLASS_PRECIPITATION,
     DEVICE_CLASS_TEMPERATURE,
+    DEVICE_CLASS_WIND_DIRECTION,
     DEVICE_CLASS_WIND_SPEED,
     STATE_CLASS_MEASUREMENT,
     STATE_CLASS_TOTAL,
@@ -54,7 +56,7 @@ DEVICE_SCHEMA = cv.Schema(
         cv.Optional(CONF_DIRECTION): sensor.sensor_schema(
             unit_of_measurement=UNIT_DEGREES,
             accuracy_decimals=1,
-            device_class=DEVICE_CLASS_EMPTY,
+            device_class=DEVICE_CLASS_WIND_DIRECTION,
             state_class=STATE_CLASS_MEASUREMENT,
         ),
         cv.Optional(CONF_TEMPERATURE): sensor.sensor_schema(
@@ -90,7 +92,7 @@ DEVICE_SCHEMA = cv.Schema(
         cv.Optional(CONF_UV): sensor.sensor_schema(
             unit_of_measurement=UNIT_EMPTY,
             accuracy_decimals=0,
-            device_class=DEVICE_CLASS_EMPTY,
+            device_class=DEVICE_CLASS_IRRADIANCE,
             state_class=STATE_CLASS_MEASUREMENT,
         ),
         cv.Optional(CONF_LUX): sensor.sensor_schema(
