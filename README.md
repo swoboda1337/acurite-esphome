@@ -22,6 +22,23 @@ Example yaml to use in esphome device config:
       buffer_size: 100000b
       memory_blocks: 8
 
+    spi:
+      clk_pin: GPIO5
+      mosi_pin: GPIO27
+      miso_pin: GPIO19
+
+    sx127x:
+      cs_pin: GPIO18
+      rst_pin: GPIO23
+      dio0_pin: GPIO26
+      frequency: 433920000
+      modulation: OOK
+      rx_start: true
+      bandwidth: 50_0kHz
+      packet_mode: false
+      bitsync: true
+      rx_floor: -90
+
     binary_sensor:
       - platform: acurite
         devices:
@@ -275,3 +292,46 @@ For lightning detection the following example sensors that can be added to Home 
             min_gradient: 0.0001
             min_samples: 2
             max_samples: 30
+
+For sensors in different physical locations (e.g., a bedroom), use sub-device configuration within your YAML to explicitly assign them to their correct areas. This ensures sensors are correctly mapped to their respective areas, rather than inheriting the main device's location.
+
+    esphome:
+      name: "acurite"
+      areas:
+        - id: living_room_area
+          name: "Living Room"
+        - id: bedroom_area
+          name: "Bedroom"
+      devices:
+        - id: living_room_device
+          name: "Living Room Sensors"
+          area_id: living_room_area
+        - id: bedroom_device
+          name: "Bedroom Sensors"
+          area_id: bedroom_area
+
+    binary_sensor:
+      - platform: acurite
+        devices:
+          - device: 0x137e
+            battery_level:
+              name: "Battery Level Server"
+              device_id: living_room_device
+          - device: 0x0083
+            battery_level:
+              name: "Battery Level Lightning"
+              device_id: bedroom_device
+
+    sensor:
+      - platform: acurite    
+        devices:
+          - device: 0x1d2e
+            temperature:
+              name: "Backyard Temperature"
+              device_id: living_room_device
+              force_update: true
+              filters:
+                - timeout: 5min
+                - or:
+                  - throttle: 30min
+                  - delta: 0.01
