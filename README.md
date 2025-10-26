@@ -14,13 +14,14 @@ Example yaml to use in esphome device config:
         refresh: 1d
     
     acurite:
-
+    
     remote_receiver:
       pin: GPIO32
-      filter: 100us
+      filter: 3us
       idle: 800us
-      buffer_size: 100000b
-      memory_blocks: 8
+      rmt_symbols: 512
+      receive_symbols: 512
+      filter_symbols: 48
 
     interval:
       - interval: 5min
