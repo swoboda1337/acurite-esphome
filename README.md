@@ -22,6 +22,12 @@ Example yaml to use in esphome device config:
       buffer_size: 100000b
       memory_blocks: 8
 
+    interval:
+      - interval: 5min
+        then:
+          - sx127x.set_mode_standby
+          - sx127x.run_image_cal
+          - sx127x.set_mode_rx
     spi:
       clk_pin: GPIO5
       mosi_pin: GPIO27
@@ -31,13 +37,15 @@ Example yaml to use in esphome device config:
       cs_pin: GPIO18
       rst_pin: GPIO23
       dio0_pin: GPIO26
+      auto_cal: false
       frequency: 433920000
       modulation: OOK
       rx_start: true
       bandwidth: 50_0kHz
       packet_mode: false
       bitsync: true
-      rx_floor: -90
+      bitrate: 4800
+      rx_floor: -97
 
     binary_sensor:
       - platform: acurite
