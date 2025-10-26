@@ -28,6 +28,7 @@ Example yaml to use in esphome device config:
           - sx127x.set_mode_standby
           - sx127x.run_image_cal
           - sx127x.set_mode_rx
+
     spi:
       clk_pin: GPIO5
       mosi_pin: GPIO27
