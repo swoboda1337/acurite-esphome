@@ -119,31 +119,25 @@ async def to_code(config):
             var = cg.new_Pvariable(device_cfg[CONF_ID])
             await cg.register_component(var, device_cfg)
             cg.add(var.set_id(device_cfg[CONF_DEVICE]))
-            if CONF_SPEED in device_cfg:
-                sens = await sensor.new_sensor(device_cfg[CONF_SPEED])
-                cg.add(var.set_speed_sensor(sens))
-            if CONF_DIRECTION in device_cfg:
-                sens = await sensor.new_sensor(device_cfg[CONF_DIRECTION])
-                cg.add(var.set_direction_sensor(sens))
-            if CONF_TEMPERATURE in device_cfg:
-                sens = await sensor.new_sensor(device_cfg[CONF_TEMPERATURE])
-                cg.add(var.set_temperature_sensor(sens))
-            if CONF_HUMIDITY in device_cfg:
-                sens = await sensor.new_sensor(device_cfg[CONF_HUMIDITY])
-                cg.add(var.set_humidity_sensor(sens))
-            if CONF_RAIN in device_cfg:
-                sens = await sensor.new_sensor(device_cfg[CONF_RAIN])
-                cg.add(var.set_rainfall_sensor(sens))
-            if CONF_LIGHTNING in device_cfg:
-                sens = await sensor.new_sensor(device_cfg[CONF_LIGHTNING])
-                cg.add(var.set_lightning_sensor(sens))
-            if CONF_DISTANCE in device_cfg:
-                sens = await sensor.new_sensor(device_cfg[CONF_DISTANCE])
-                cg.add(var.set_distance_sensor(sens))
-            if CONF_UV in device_cfg:
-                sens = await sensor.new_sensor(device_cfg[CONF_UV])
-                cg.add(var.set_uv_sensor(sens))
-            if CONF_LUX in device_cfg:
-                sens = await sensor.new_sensor(device_cfg[CONF_LUX])
-                cg.add(var.set_lux_sensor(sens))
+
+            sensors = [
+                (cg.new_Pvariable(conf[CONF_ID]), conf, setter)
+                for key, setter in (
+                    (CONF_SPEED, "set_speed_sensor"),
+                    (CONF_DIRECTION, "set_direction_sensor"),
+                    (CONF_TEMPERATURE, "set_temperature_sensor"),
+                    (CONF_HUMIDITY, "set_humidity_sensor"),
+                    (CONF_RAIN, "set_rainfall_sensor"),
+                    (CONF_LIGHTNING, "set_lightning_sensor"),
+                    (CONF_DISTANCE, "set_distance_sensor"),
+                    (CONF_UV, "set_uv_sensor"),
+                    (CONF_LUX, "set_lux_sensor"),
+                )
+                if (conf := device_cfg.get(key))
+            ]
+
+            for sens, conf, setter in sensors:
+                await sensor.register_sensor(sens, conf)
+                cg.add(getattr(var, setter)(sens))
+
             cg.add(parent.add_device(var, device_cfg[CONF_DEVICE]))
