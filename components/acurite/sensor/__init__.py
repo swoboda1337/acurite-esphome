@@ -120,24 +120,19 @@ async def to_code(config):
             await cg.register_component(var, device_cfg)
             cg.add(var.set_id(device_cfg[CONF_DEVICE]))
 
-            sensors = [
-                (cg.new_Pvariable(conf[CONF_ID]), conf, setter)
-                for key, setter in (
-                    (CONF_SPEED, "set_speed_sensor"),
-                    (CONF_DIRECTION, "set_direction_sensor"),
-                    (CONF_TEMPERATURE, "set_temperature_sensor"),
-                    (CONF_HUMIDITY, "set_humidity_sensor"),
-                    (CONF_RAIN, "set_rainfall_sensor"),
-                    (CONF_LIGHTNING, "set_lightning_sensor"),
-                    (CONF_DISTANCE, "set_distance_sensor"),
-                    (CONF_UV, "set_uv_sensor"),
-                    (CONF_LUX, "set_lux_sensor"),
-                )
-                if (conf := device_cfg.get(key))
-            ]
-
-            for sens, conf, setter in sensors:
-                await sensor.register_sensor(sens, conf)
-                cg.add(getattr(var, setter)(sens))
+            for key, setter in (
+                (CONF_SPEED, "set_speed_sensor"),
+                (CONF_DIRECTION, "set_direction_sensor"),
+                (CONF_TEMPERATURE, "set_temperature_sensor"),
+                (CONF_HUMIDITY, "set_humidity_sensor"),
+                (CONF_RAIN, "set_rainfall_sensor"),
+                (CONF_LIGHTNING, "set_lightning_sensor"),
+                (CONF_DISTANCE, "set_distance_sensor"),
+                (CONF_UV, "set_uv_sensor"),
+                (CONF_LUX, "set_lux_sensor"),
+            ):
+                if conf := device_cfg.get(key):
+                    sens = await sensor.new_sensor(conf)
+                    cg.add(getattr(var, setter)(sens))
 
             cg.add(parent.add_device(var, device_cfg[CONF_DEVICE]))
