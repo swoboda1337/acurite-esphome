@@ -42,6 +42,40 @@ bool AcuRiteComponent::validate_(uint8_t *data, uint8_t len, int8_t except) {
   return true;
 }
 
+void AcuRiteComponent::decode_609txc_(uint8_t *data, uint8_t len) {
+  if (len != 5) {
+    return;
+  }
+
+  uint8_t cksum = 0;
+  for (int32_t i = 0; i < 4; i++) {
+    cksum += data[i];
+  }
+
+  if ((cksum & 0xff) != data[4]) {
+    return;
+  }
+
+  uint8_t id = data[0];
+  uint8_t battery_low = ((data[1] & 0xf0) >> 4) & 0x8;
+  float temp = (((int16_t)(((data[1] & 0x0f) << 12) | (data[2] << 4))) >> 4) * 0.1f;
+  uint8_t humidity = data[3];
+
+  if (humidity == 0 || humidity > 100) {
+    return;
+  }
+
+  ESP_LOGD(TAG, "609TXC:      id %02x, bat %x, temp %.1f, rh %d", id, battery_low, temp, humidity);
+
+  for (auto *device : this->devices_) {
+    if (device->get_id() == id) {
+      device->update_battery(battery_low ? 0 : 1);
+      device->update_temperature(temp);
+      device->update_humidity((float) humidity);
+    }
+  }
+}
+
 void AcuRiteComponent::decode_fridge_(uint8_t *data, uint8_t len) {
   if (len == 6 && this->validate_(data, 6, -1)) {
     char channel = CHANNEL_LUT[data[0] >> 6];
@@ -292,6 +326,7 @@ bool AcuRiteComponent::on_receive(remote_base::RemoteReceiveData data) {
           this->decode_notos_(bytes, bits / 8);
           this->decode_iris_(bytes, bits / 8);
           this->decode_fridge_(bytes, bits / 8);
+          this->decode_609txc_(bytes, bits / 8);
         }
 
         // reset if buffer is full
