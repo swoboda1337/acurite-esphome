@@ -115,6 +115,7 @@ void AcuRiteComponent::decode_lightning_(uint8_t *data, uint8_t len) {
     for (auto *device : this->devices_) {
       if (device->get_id() == id) {
         device->update_battery(battery);
+        device->update_rfi(rfi);
         device->update_temperature(temp);
         device->update_humidity(humidity);
         device->update_lightning(count);

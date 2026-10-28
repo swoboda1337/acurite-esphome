@@ -1,7 +1,13 @@
 import esphome.codegen as cg
 from esphome.components import binary_sensor
 import esphome.config_validation as cv
-from esphome.const import CONF_BATTERY_LEVEL, CONF_DEVICE, CONF_ID, DEVICE_CLASS_BATTERY
+from esphome.const import (
+    CONF_BATTERY_LEVEL,
+    CONF_DEVICE,
+    CONF_ID,
+    DEVICE_CLASS_BATTERY,
+    DEVICE_CLASS_PROBLEM,
+)
 
 from .. import AcuRiteComponent, acurite_ns
 
@@ -9,17 +15,24 @@ DEPENDENCIES = ["acurite"]
 
 CONF_ACURITE_ID = "acurite_id"
 CONF_DEVICES = "devices"
+CONF_RFI = "rfi"
 
 AcuRiteBinarySensor = acurite_ns.class_("AcuRiteBinarySensor", cg.Component)
 
-DEVICE_SCHEMA = cv.Schema(
-    {
-        cv.GenerateID(): cv.declare_id(AcuRiteBinarySensor),
-        cv.Required(CONF_DEVICE): cv.hex_int_range(max=0x3FFF),
-        cv.Required(CONF_BATTERY_LEVEL): binary_sensor.binary_sensor_schema(
-            device_class=DEVICE_CLASS_BATTERY,
-        ),
-    }
+DEVICE_SCHEMA = cv.All(
+    cv.Schema(
+        {
+            cv.GenerateID(): cv.declare_id(AcuRiteBinarySensor),
+            cv.Required(CONF_DEVICE): cv.hex_int_range(max=0x3FFF),
+            cv.Optional(CONF_BATTERY_LEVEL): binary_sensor.binary_sensor_schema(
+                device_class=DEVICE_CLASS_BATTERY,
+            ),
+            cv.Optional(CONF_RFI): binary_sensor.binary_sensor_schema(
+                device_class=DEVICE_CLASS_PROBLEM,
+            ),
+        }
+    ),
+    cv.has_at_least_one_key(CONF_BATTERY_LEVEL, CONF_RFI),
 )
 
 CONFIG_SCHEMA = cv.Schema(
@@ -42,4 +55,7 @@ async def to_code(config):
                     device_cfg[CONF_BATTERY_LEVEL]
                 )
                 cg.add(var.set_battery_level_binary_sensor(sens))
+            if CONF_RFI in device_cfg:
+                sens = await binary_sensor.new_binary_sensor(device_cfg[CONF_RFI])
+                cg.add(var.set_rfi_binary_sensor(sens))
             cg.add(parent.add_device(var, device_cfg[CONF_DEVICE]))

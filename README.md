@@ -64,6 +64,12 @@ Example yaml to use in esphome device config:
           - device: 0x0083
             battery_level:
               name: "Battery Level Atlas"
+          - device: 0x00f6
+            battery_level:
+              name: "Battery Level AcuRite 06045M"
+            rfi:
+              name: "RF Interference AcuRite 06045M"
+
 
     sensor:
       - platform: acurite

@@ -9,9 +9,11 @@ namespace acurite {
 class AcuRiteBinarySensor : public Component, public AcuRiteDevice {
  public:
   void update_battery(uint8_t value) override;
+  void update_rfi(bool value) override;
   void dump_config() override;
 
   SUB_BINARY_SENSOR(battery_level)
+  SUB_BINARY_SENSOR(rfi)
 };
 
 }  // namespace acurite

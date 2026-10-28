@@ -8,6 +8,7 @@ namespace acurite {
 class AcuRiteDevice {
  public:
   virtual void update_battery(uint8_t value) {}
+  virtual void update_rfi(bool value) {}
   virtual void update_speed(float value) {}
   virtual void update_direction(float value) {}
   virtual void update_temperature(float value) {}
