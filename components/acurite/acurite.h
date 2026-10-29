@@ -39,6 +39,7 @@ class AcuRiteComponent : public Component, public remote_base::RemoteReceiverLis
   void decode_iris_(uint8_t *data, uint8_t len);
   void decode_fridge_(uint8_t *data, uint8_t len);
   void decode_609txc_(uint8_t *data, uint8_t len);
+  void decode_ppm_(remote_base::RemoteReceiveData data);
   bool validate_(uint8_t *data, uint8_t len, int8_t except);
   std::vector<AcuRiteDevice *> devices_;
 };

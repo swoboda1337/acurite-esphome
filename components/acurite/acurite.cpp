@@ -47,21 +47,22 @@ void AcuRiteComponent::decode_609txc_(uint8_t *data, uint8_t len) {
     return;
   }
 
-  uint8_t cksum = 0;
+  // an all zero message sums to zero and would pass the checksum
+  uint32_t cksum = 0;
   for (int32_t i = 0; i < 4; i++) {
     cksum += data[i];
   }
 
-  if ((cksum & 0xff) != data[4]) {
+  if (cksum == 0 || (cksum & 0xff) != data[4]) {
     return;
   }
 
   uint8_t id = data[0];
-  uint8_t battery_low = ((data[1] & 0xf0) >> 4) & 0x8;
+  uint8_t battery_low = data[1] & 0x80;
   float temp = (((int16_t)(((data[1] & 0x0f) << 12) | (data[2] << 4))) >> 4) * 0.1f;
   uint8_t humidity = data[3];
 
-  if (humidity == 0 || humidity > 100) {
+  if (humidity > 100) {
     return;
   }
 
@@ -298,12 +299,45 @@ void AcuRiteComponent::decode_iris_(uint8_t *data, uint8_t len) {
   }
 }
 
+void AcuRiteComponent::decode_ppm_(remote_base::RemoteReceiveData data) {
+  // the 609TXC uses pulse position modulation, 40 bits per message. each bit is a mark of about 500 us and a
+  // space of 1000 us for a zero or 2000 us for a one. a weak signal moves time between the mark and the space
+  // and the radio rounds pulses to its bit sync period (about 208 us at 4800 bps), so a bit is classified by
+  // the mark plus space period with wide windows. the 500 us preamble pairs and the sync gap fall outside
+  // them and restart the message.
+  uint8_t bytes[5] = {0};
+  uint32_t bits = 0;
+
+  while (data.is_valid()) {
+    int32_t period = 0;
+    if (data.is_valid(1) && data.peek() > 0 && data.peek(1) < 0) {
+      period = data.peek() - data.peek(1);
+    }
+    bool is_zero = period >= 1100 && period <= 1900;
+    bool is_one = period >= 2100 && period <= 2900;
+    if (is_zero || is_one) {
+      bytes[bits / 8] = (bytes[bits / 8] << 1) | (is_one ? 1 : 0);
+      bits += 1;
+      if (bits == sizeof(bytes) * 8) {
+        this->decode_609txc_(bytes, bits / 8);
+        bits = 0;
+      }
+      data.advance(2);
+    } else {
+      bits = 0;
+      data.advance();
+    }
+  }
+}
+
 bool AcuRiteComponent::on_receive(remote_base::RemoteReceiveData data) {
   uint8_t bytes[10] = {0};
   uint32_t bits = 0;
   uint32_t syncs = 0;
 
   ESP_LOGV(TAG, "Received raw data with length %" PRIi32, data.size());
+
+  this->decode_ppm_(data);
 
   // decode AcuRite OOK data
   data.set_tolerance(100, remote_base::TOLERANCE_MODE_TIME);
@@ -327,7 +361,6 @@ bool AcuRiteComponent::on_receive(remote_base::RemoteReceiveData data) {
           this->decode_notos_(bytes, bits / 8);
           this->decode_iris_(bytes, bits / 8);
           this->decode_fridge_(bytes, bits / 8);
-          this->decode_609txc_(bytes, bits / 8);
         }
 
         // reset if buffer is full
